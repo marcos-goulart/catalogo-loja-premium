@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import Lenis from "@studio-freight/lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { products, formatBRL, type Product } from "@/lib/products";
+import { ArrowRight, MessageCircle, Mail, Instagram, MapPin } from "lucide-react";
+import { collection, formatBRL, CONTACT, type Product } from "@/lib/products";
 import { ProductSheet } from "@/components/ProductSheet";
 
 export const Route = createFileRoute("/")({
