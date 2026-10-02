@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Lenis from "@studio-freight/lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowRight, MessageCircle, Mail, Instagram, MapPin } from "lucide-react";
+import { ArrowRight, MessageCircle, Mail, AtSign, MapPin } from "lucide-react";
 import { collection, formatBRL, CONTACT, type Product } from "@/lib/products";
 import { ProductSheet } from "@/components/ProductSheet";
 
@@ -118,7 +118,7 @@ function Index() {
               <p className="mt-1 text-sm">{CONTACT.email}</p>
             </a>
             <a href="https://instagram.com" target="_blank" rel="noreferrer" className="group">
-              <Instagram className="mx-auto h-5 w-5 text-muted-foreground transition group-hover:text-foreground" />
+              <AtSign className="mx-auto h-5 w-5 text-muted-foreground transition group-hover:text-foreground" />
               <p className="mt-3 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Instagram</p>
               <p className="mt-1 text-sm">{CONTACT.instagram}</p>
             </a>
