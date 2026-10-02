@@ -21,7 +21,16 @@ export const products: Product[] = [
   { id: "8", name: "Camiseta Pima Premium", price: 249, gallery: [u("photo-1521572163474-6864f9cf17ab"), u("photo-1503341504253-dff4815485f1")], sizes: ["P", "M", "G", "GG"], colors: ["Branco", "Preto", "Cinza"], inStock: true },
 ];
 
+export const collection: Product[] = products.slice(0, 6);
+
 export const formatBRL = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export const WHATSAPP_NUMBER = "5511999999999";
+
+export const CONTACT = {
+  whatsapp: WHATSAPP_NUMBER,
+  email: "contato@modapremium.com.br",
+  instagram: "@modapremium",
+  city: "São Paulo — SP",
+};
