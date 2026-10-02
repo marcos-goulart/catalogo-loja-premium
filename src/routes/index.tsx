@@ -66,10 +66,26 @@ function Index() {
         <div className="relative w-full px-6 pb-16 text-background md:px-12 md:pb-24">
           <p className="hero-anim mb-4 text-xs uppercase tracking-[0.3em]">Coleção Outono 2026</p>
           <h1 className="hero-anim max-w-3xl text-5xl font-light leading-[1.05] tracking-tight md:text-7xl">Essencial.<br />Atemporal.</h1>
-          <button onClick={() => lenisRef.current?.scrollTo("#colecao", { offset: -64 })} className="hero-anim mt-8 bg-background px-8 py-4 text-sm font-medium uppercase tracking-[0.2em] text-foreground transition hover:bg-secondary">
-            Ver Coleção
-          </button>
+          <div className="hero-anim mt-8 flex flex-wrap items-center gap-4">
+            <button onClick={() => lenisRef.current?.scrollTo("#colecao", { offset: -64 })} className="bg-background px-8 py-4 text-sm font-medium uppercase tracking-[0.2em] text-foreground transition hover:bg-secondary">
+              Ver Coleção
+            </button>
+            <Link
+              to="/colecao-outono"
+              className="md:hidden inline-flex items-center gap-3 border border-background/50 px-8 py-4 text-[11px] font-medium uppercase tracking-[0.25em] text-background backdrop-blur-sm transition hover:bg-background hover:text-foreground"
+            >
+              Coleção Outono
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
+        <Link
+          to="/colecao-outono"
+          className="group absolute right-6 top-1/2 hidden -translate-y-1/2 items-center gap-3 border border-background/40 bg-background/10 px-7 py-4 text-[11px] font-medium uppercase tracking-[0.3em] text-background backdrop-blur-md transition duration-300 hover:border-background hover:bg-background hover:text-foreground md:right-12 md:flex"
+        >
+          Coleção Outono
+          <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+        </Link>
       </section>
 
       <main id="colecao" className="px-4 py-16 md:px-12 md:py-24">

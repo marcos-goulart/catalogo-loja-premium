@@ -23,6 +23,14 @@ export const products: Product[] = [
 
 export const collection: Product[] = products.slice(0, 6);
 
+export const autumnCollection: Product[] = [
+  products.find((p) => p.id === "1")!, // Blazer Alfaiataria Lã
+  products.find((p) => p.id === "3")!, // Trench Coat Clássico
+  products.find((p) => p.id === "4")!, // Tricô Merino Gola Alta
+  products.find((p) => p.id === "6")!, // Calça Pantalona Crepe
+  products.find((p) => p.id === "7")!, // Jaqueta Couro Essential
+];
+
 export const formatBRL = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
