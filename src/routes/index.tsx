@@ -75,10 +75,10 @@ function Index() {
       <main id="colecao" className="px-4 py-16 md:px-12 md:py-24">
         <div className="mb-10 flex items-end justify-between">
           <h2 className="text-2xl font-light tracking-tight md:text-3xl">A Coleção</h2>
-          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{products.length} peças</span>
+          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{collection.length} peças</span>
         </div>
         <div ref={gridRef} className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((p) => (
+          {collection.map((p) => (
             <button key={p.id} onClick={() => setSelected(p)} className="card group text-left">
               <div className="relative aspect-[3/4] overflow-hidden bg-muted">
                 <img src={p.gallery[0]} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
@@ -91,10 +91,45 @@ function Index() {
             </button>
           ))}
         </div>
+        <div className="mt-14 flex justify-center">
+          <Link
+            to="/produtos"
+            className="group flex items-center gap-3 border border-border px-8 py-4 text-xs font-medium uppercase tracking-[0.25em] transition hover:border-foreground"
+          >
+            Ver todos os produtos
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Link>
+        </div>
       </main>
 
-      <footer className="border-t border-border px-6 py-10 text-center text-xs tracking-[0.2em] text-muted-foreground">
-        © 2026 MODA PREMIUM
+      <footer id="contato" className="border-t border-border bg-muted/40 px-6 py-16 md:px-12">
+        <div className="mx-auto max-w-5xl">
+          <p className="text-center text-xs uppercase tracking-[0.4em] text-muted-foreground">Fale conosco</p>
+          <h2 className="mt-4 text-center text-2xl font-light tracking-tight md:text-3xl">Atendimento personalizado</h2>
+          <div className="mt-10 grid grid-cols-1 gap-8 text-center sm:grid-cols-2 lg:grid-cols-4">
+            <a href={`https://wa.me/${CONTACT.whatsapp}`} target="_blank" rel="noreferrer" className="group">
+              <MessageCircle className="mx-auto h-5 w-5 text-muted-foreground transition group-hover:text-foreground" />
+              <p className="mt-3 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">WhatsApp</p>
+              <p className="mt-1 text-sm">+55 11 99999-9999</p>
+            </a>
+            <a href={`mailto:${CONTACT.email}`} className="group">
+              <Mail className="mx-auto h-5 w-5 text-muted-foreground transition group-hover:text-foreground" />
+              <p className="mt-3 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">E-mail</p>
+              <p className="mt-1 text-sm">{CONTACT.email}</p>
+            </a>
+            <a href="https://instagram.com" target="_blank" rel="noreferrer" className="group">
+              <Instagram className="mx-auto h-5 w-5 text-muted-foreground transition group-hover:text-foreground" />
+              <p className="mt-3 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Instagram</p>
+              <p className="mt-1 text-sm">{CONTACT.instagram}</p>
+            </a>
+            <div>
+              <MapPin className="mx-auto h-5 w-5 text-muted-foreground" />
+              <p className="mt-3 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Ateliê</p>
+              <p className="mt-1 text-sm">{CONTACT.city}</p>
+            </div>
+          </div>
+          <p className="mt-12 text-center text-[10px] tracking-[0.3em] text-muted-foreground">© 2026 MODA PREMIUM</p>
+        </div>
       </footer>
 
       <ProductSheet product={selected} onClose={close} />
