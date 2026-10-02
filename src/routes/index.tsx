@@ -1,24 +1,102 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState, useCallback } from "react";
+import Lenis from "@studio-freight/lenis";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { products, formatBRL, type Product } from "@/lib/products";
+import { ProductSheet } from "@/components/ProductSheet";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Moda Premium — Catálogo" },
+      { name: "description", content: "Catálogo de roupas premium. Escolha sua peça e finalize pelo WhatsApp." },
+      { property: "og:title", content: "Moda Premium — Catálogo" },
+      { property: "og:description", content: "Peças atemporais. Compre direto pelo WhatsApp." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+const HERO = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1920&q=80";
+
 function Index() {
+  const [selected, setSelected] = useState<Product | null>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const lenisRef = useRef<Lenis | null>(null);
+  const close = useCallback(() => setSelected(null), []);
+
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger);
+    const lenis = new Lenis({ duration: 1.2 });
+    lenisRef.current = lenis;
+    lenis.on("scroll", ScrollTrigger.update);
+    const tick = (t: number) => lenis.raf(t * 1000);
+    gsap.ticker.add(tick);
+    gsap.ticker.lagSmoothing(0);
+
+    const ctx = gsap.context(() => {
+      gsap.from(".hero-anim", { y: 40, opacity: 0, duration: 1.1, stagger: 0.15, ease: "power3.out", delay: 0.2 });
+      gsap.utils.toArray<HTMLElement>(".card").forEach((el, i) => {
+        gsap.from(el, { y: 60, opacity: 0, duration: 0.9, ease: "power3.out", delay: (i % 4) * 0.08, scrollTrigger: { trigger: el, start: "top 90%" } });
+      });
+    });
+    return () => { ctx.revert(); gsap.ticker.remove(tick); lenis.destroy(); };
+  }, []);
+
+  useEffect(() => {
+    if (selected) lenisRef.current?.stop(); else lenisRef.current?.start();
+  }, [selected]);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-md">
+        <div className="flex h-16 items-center justify-center">
+          <span className="text-sm font-medium tracking-[0.4em]">MODA PREMIUM</span>
+        </div>
+      </header>
+
+      <section ref={heroRef} className="relative -mt-16 flex h-[80vh] items-end overflow-hidden">
+        <img src={HERO} alt="Coleção de moda" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent" />
+        <div className="relative w-full px-6 pb-16 text-background md:px-12 md:pb-24">
+          <p className="hero-anim mb-4 text-xs uppercase tracking-[0.3em]">Coleção Outono 2026</p>
+          <h1 className="hero-anim max-w-3xl text-5xl font-light leading-[1.05] tracking-tight md:text-7xl">Essencial.<br />Atemporal.</h1>
+          <button onClick={() => lenisRef.current?.scrollTo("#colecao", { offset: -64 })} className="hero-anim mt-8 bg-background px-8 py-4 text-sm font-medium uppercase tracking-[0.2em] text-foreground transition hover:bg-secondary">
+            Ver Coleção
+          </button>
+        </div>
+      </section>
+
+      <main id="colecao" className="px-4 py-16 md:px-12 md:py-24">
+        <div className="mb-10 flex items-end justify-between">
+          <h2 className="text-2xl font-light tracking-tight md:text-3xl">A Coleção</h2>
+          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{products.length} peças</span>
+        </div>
+        <div ref={gridRef} className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {products.map((p) => (
+            <button key={p.id} onClick={() => setSelected(p)} className="card group text-left">
+              <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+                <img src={p.gallery[0]} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" />
+                {!p.inStock && <span className="absolute left-3 top-3 bg-background px-3 py-1 text-[10px] uppercase tracking-[0.2em]">Esgotado</span>}
+              </div>
+              <div className="mt-4 flex items-start justify-between gap-4">
+                <h3 className="text-sm">{p.name}</h3>
+                <p className="shrink-0 text-sm text-muted-foreground">{formatBRL(p.price)}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </main>
+
+      <footer className="border-t border-border px-6 py-10 text-center text-xs tracking-[0.2em] text-muted-foreground">
+        © 2026 MODA PREMIUM
+      </footer>
+
+      <ProductSheet product={selected} onClose={close} />
     </div>
   );
 }
