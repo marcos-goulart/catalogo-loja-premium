@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { X, MessageCircle } from "lucide-react";
-import { type Product, formatBRL, WHATSAPP_NUMBER } from "@/lib/products";
+import { X, MessageCircle, ShoppingBag, Check } from "lucide-react";
+import { type Product, formatBRL, WHATSAPP_NUMBER } from "@/lib/productsMock";
+import { useCartStore } from "@/store/useCartStore";
 
 export function ProductSheet({
   product,
@@ -12,11 +13,14 @@ export function ProductSheet({
   const [img, setImg] = useState(0);
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
+  const [isAdded, setIsAdded] = useState(false);
+  const { addItem } = useCartStore();
 
   useEffect(() => {
     setImg(0);
     setSize(null);
     setColor(product?.colors[0] ?? null);
+    setIsAdded(false);
     if (!product) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
@@ -24,6 +28,21 @@ export function ProductSheet({
   }, [product, onClose]);
 
   if (!product) return null;
+
+  const handleAddToCart = () => {
+    if (!size || !product.inStock) return;
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      size,
+      color: color || product.colors[0] || "",
+      image: product.gallery[img] || product.gallery[0] || "",
+      quantity: 1,
+    });
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 1800);
+  };
 
   const buy = () => {
     if (!size) return;
@@ -102,14 +121,35 @@ export function ProductSheet({
               })}
             </div>
           </div>
-          <button
-            onClick={buy}
-            disabled={!size || !product.inStock}
-            className="flex h-14 w-full items-center justify-center gap-2 bg-whatsapp text-base font-medium text-whatsapp-foreground transition hover:brightness-95 disabled:opacity-50"
-          >
-            <MessageCircle className="h-5 w-5" />
-            {!product.inStock ? "Esgotado" : size ? "Comprar no WhatsApp" : "Selecione um tamanho"}
-          </button>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleAddToCart}
+              disabled={!size || !product.inStock}
+              className="flex h-14 w-full items-center justify-center gap-2 border border-foreground bg-foreground text-background text-sm font-medium uppercase tracking-[0.2em] transition hover:bg-foreground/90 disabled:opacity-50"
+            >
+              {isAdded ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Adicionado à Sacola
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="h-4 w-4" />
+                  {!product.inStock ? "Esgotado" : size ? "Adicionar à Sacola" : "Selecione um tamanho"}
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={buy}
+              disabled={!size || !product.inStock}
+              className="flex h-12 w-full items-center justify-center gap-2 border border-border text-xs uppercase tracking-[0.2em] text-muted-foreground transition hover:border-foreground hover:text-foreground disabled:opacity-50"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Comprar direto no WhatsApp
+            </button>
+          </div>
         </div>
       </aside>
     </div>

@@ -3,9 +3,17 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Lenis from "@studio-freight/lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowRight, MessageCircle, Mail, AtSign, MapPin } from "lucide-react";
-import { collection, formatBRL, CONTACT, type Product } from "@/lib/products";
+import { ArrowRight, MessageCircle, Mail, AtSign, MapPin, Search } from "lucide-react";
+import { collection, formatBRL, CONTACT, type Product } from "@/lib/productsMock";
 import { ProductSheet } from "@/components/ProductSheet";
+import { CartDrawer } from "@/components/CartDrawer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,6 +37,8 @@ const HERO =
 
 function Index() {
   const [selected, setSelected] = useState<Product | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState("a-z");
   const heroRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
@@ -75,11 +85,25 @@ function Index() {
     else lenisRef.current?.start();
   }, [selected]);
 
+  const filteredAndSortedProducts = collection
+    .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase().trim()))
+    .sort((a, b) => {
+      if (sortOption === "z-a") return b.name.localeCompare(a.name, "pt-BR");
+      if (sortOption === "price-asc") return a.price - b.price;
+      if (sortOption === "price-desc") return b.price - a.price;
+      return a.name.localeCompare(b.name, "pt-BR");
+    })
+    .slice(0, 16);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-md">
-        <div className="flex h-16 items-center justify-center">
+        <div className="flex h-16 items-center justify-between px-6 md:px-12">
+          <div className="w-9" />
           <span className="text-sm font-medium tracking-[0.4em]">MODA PREMIUM</span>
+          <div className="flex items-center">
+            <CartDrawer />
+          </div>
         </div>
       </header>
 
@@ -110,38 +134,88 @@ function Index() {
       </section>
 
       <main id="colecao" className="px-4 py-16 md:px-12 md:py-24">
-        <div className="mb-10 flex items-end justify-between">
-          <h2 className="text-2xl font-light tracking-tight md:text-3xl">A Coleção</h2>
-          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            {collection.length} peças
-          </span>
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-light tracking-tight md:text-3xl">A Coleção</h2>
+            <p className="mt-1 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              {filteredAndSortedProducts.length} {filteredAndSortedProducts.length === 1 ? "peça" : "peças"}
+            </p>
+          </div>
         </div>
-        <div
-          ref={gridRef}
-          className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        >
-          {collection.map((p) => (
-            <button key={p.id} onClick={() => setSelected(p)} className="card group text-left">
-              <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-                <img
-                  src={p.gallery[0]}
-                  alt={p.name}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                />
-                {!p.inStock && (
-                  <span className="absolute left-3 top-3 bg-background px-3 py-1 text-[10px] uppercase tracking-[0.2em]">
-                    Esgotado
-                  </span>
-                )}
-              </div>
-              <div className="mt-4 flex items-start justify-between gap-4">
-                <h3 className="text-sm">{p.name}</h3>
-                <p className="shrink-0 text-sm text-muted-foreground">{formatBRL(p.price)}</p>
-              </div>
-            </button>
-          ))}
+
+        {/* Seção de Controles: Busca e Ordenação */}
+        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 sm:max-w-md">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar peça por nome..."
+              className="w-full border border-border bg-background py-2.5 pl-10 pr-4 text-xs font-light tracking-wide text-foreground placeholder:text-muted-foreground/70 transition-colors focus:border-foreground focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="shrink-0 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              Ordenar:
+            </span>
+            <Select value={sortOption} onValueChange={(value) => setSortOption(value)}>
+              <SelectTrigger className="w-[220px] rounded-none border-foreground/20 bg-transparent text-sm font-light tracking-wide text-foreground hover:border-foreground focus:ring-0">
+                <SelectValue placeholder="Ordenar..." />
+              </SelectTrigger>
+              <SelectContent className="rounded-none border-border bg-background text-foreground">
+                <SelectItem value="a-z" className="cursor-pointer text-xs font-light tracking-wide">
+                  A - Z
+                </SelectItem>
+                <SelectItem value="z-a" className="cursor-pointer text-xs font-light tracking-wide">
+                  Z - A
+                </SelectItem>
+                <SelectItem value="price-asc" className="cursor-pointer text-xs font-light tracking-wide">
+                  Preço: Menor para Maior
+                </SelectItem>
+                <SelectItem value="price-desc" className="cursor-pointer text-xs font-light tracking-wide">
+                  Preço: Maior para Menor
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
+        {filteredAndSortedProducts.length === 0 ? (
+          <div className="py-20 text-center">
+            <p className="text-sm font-light uppercase tracking-wider text-muted-foreground">
+              Nenhuma peça encontrada para "{searchTerm}".
+            </p>
+          </div>
+        ) : (
+          <div
+            ref={gridRef}
+            className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          >
+            {filteredAndSortedProducts.map((p) => (
+              <button key={p.id} onClick={() => setSelected(p)} className="card group text-left">
+                <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+                  <img
+                    src={p.gallery[0]}
+                    alt={p.name}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  />
+                  {!p.inStock && (
+                    <span className="absolute left-3 top-3 bg-background px-3 py-1 text-[10px] uppercase tracking-[0.2em]">
+                      Esgotado
+                    </span>
+                  )}
+                </div>
+                <div className="mt-4 flex items-start justify-between gap-4">
+                  <h3 className="text-sm">{p.name}</h3>
+                  <p className="shrink-0 text-sm text-muted-foreground">{formatBRL(p.price)}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
         <div className="mt-14 flex justify-center">
           <Link
             to="/produtos"
