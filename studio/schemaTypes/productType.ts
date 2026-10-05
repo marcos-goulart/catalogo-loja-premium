@@ -28,6 +28,22 @@ export const productType = defineType({
       validation: (Rule) => Rule.required()
     }),
     defineField({
+      name: 'category',
+      title: 'Categoria da Peça',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Camisetas & Blusas', value: 'camisetas' },
+          { title: 'Calças', value: 'calcas' },
+          { title: 'Vestidos', value: 'vestidos' },
+          { title: 'Casacos & Jaquetas', value: 'casacos' },
+          { title: 'Acessórios', value: 'acessorios' }
+        ],
+        layout: 'dropdown'
+      },
+      validation: (Rule) => Rule.required()
+    }),
+    defineField({
       name: 'collection',
       title: 'Coleção / Estação',
       type: 'reference',
