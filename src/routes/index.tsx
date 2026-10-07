@@ -4,7 +4,14 @@ import Lenis from "@studio-freight/lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowRight, MessageCircle, Mail, AtSign, MapPin, Search } from "lucide-react";
-import { collection, formatBRL, CONTACT, type Product } from "@/lib/productsMock";
+import {
+  collection,
+  products,
+  formatBRL,
+  CONTACT,
+  type Product,
+  generateSlug,
+} from "@/lib/productsMock";
 import { ProductSheet } from "@/components/ProductSheet";
 import { CartDrawer } from "@/components/CartDrawer";
 import {
@@ -35,14 +42,72 @@ export const Route = createFileRoute("/")({
 const HERO =
   "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1920&q=80";
 
+const ITEMS_PER_PAGE = 32;
+
 function Index() {
   const [selected, setSelected] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("a-z");
+  const [currentPage, setCurrentPage] = useState(1);
   const heroRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
-  const close = useCallback(() => setSelected(null), []);
+
+  const close = useCallback(() => {
+    setSelected(null);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("produto");
+      const cleanUrl =
+        url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : "");
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }, []);
+
+  const openProduct = useCallback((product: Product) => {
+    setSelected(product);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      // Aqui está a mágica: em vez de product.id, passamos o nome formatado
+      url.searchParams.set("produto", generateSlug(product.name));
+      window.history.pushState({}, "", url.toString());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Procura em todas as listas disponíveis neste arquivo (products e collection)
+    const allProducts = [...products, ...collection];
+
+    const params = new URLSearchParams(window.location.search);
+    const prodSlug = params.get("produto");
+
+    if (prodSlug) {
+      const found = allProducts.find((p) => generateSlug(p.name) === prodSlug);
+      if (found) {
+        setSelected(found);
+      }
+    }
+
+    const handlePopState = () => {
+      const currentParams = new URLSearchParams(window.location.search);
+      const currentProdSlug = currentParams.get("produto");
+      if (currentProdSlug) {
+        const found = allProducts.find((p) => generateSlug(p.name) === currentProdSlug);
+        setSelected(found || null);
+      } else {
+        setSelected(null);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sortOption]);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -92,8 +157,13 @@ function Index() {
       if (sortOption === "price-asc") return a.price - b.price;
       if (sortOption === "price-desc") return b.price - a.price;
       return a.name.localeCompare(b.name, "pt-BR");
-    })
-    .slice(0, 16);
+    });
+
+  const totalPages = Math.ceil(filteredAndSortedProducts.length / ITEMS_PER_PAGE) || 1;
+  const paginatedProducts = filteredAndSortedProducts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -138,7 +208,8 @@ function Index() {
           <div>
             <h2 className="text-2xl font-light tracking-tight md:text-3xl">A Coleção</h2>
             <p className="mt-1 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              {filteredAndSortedProducts.length} {filteredAndSortedProducts.length === 1 ? "peça" : "peças"}
+              {filteredAndSortedProducts.length}{" "}
+              {filteredAndSortedProducts.length === 1 ? "peça" : "peças"}
             </p>
           </div>
         </div>
@@ -171,10 +242,16 @@ function Index() {
                 <SelectItem value="z-a" className="cursor-pointer text-xs font-light tracking-wide">
                   Z - A
                 </SelectItem>
-                <SelectItem value="price-asc" className="cursor-pointer text-xs font-light tracking-wide">
+                <SelectItem
+                  value="price-asc"
+                  className="cursor-pointer text-xs font-light tracking-wide"
+                >
                   Preço: Menor para Maior
                 </SelectItem>
-                <SelectItem value="price-desc" className="cursor-pointer text-xs font-light tracking-wide">
+                <SelectItem
+                  value="price-desc"
+                  className="cursor-pointer text-xs font-light tracking-wide"
+                >
                   Preço: Maior para Menor
                 </SelectItem>
               </SelectContent>
@@ -193,8 +270,8 @@ function Index() {
             ref={gridRef}
             className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           >
-            {filteredAndSortedProducts.map((p) => (
-              <button key={p.id} onClick={() => setSelected(p)} className="card group text-left">
+            {paginatedProducts.map((p) => (
+              <button key={p.id} onClick={() => openProduct(p)} className="card group text-left">
                 <div className="relative aspect-[3/4] overflow-hidden bg-muted">
                   <img
                     src={p.gallery[0]}
@@ -216,6 +293,42 @@ function Index() {
             ))}
           </div>
         )}
+
+        {/* Controles de Paginação Numérica */}
+        {totalPages > 1 && (
+          <div className="mt-14 flex flex-wrap items-center justify-center gap-2">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="border border-border bg-background px-4 py-2 text-xs font-light uppercase tracking-[0.2em] transition hover:border-foreground disabled:pointer-events-none disabled:opacity-30"
+            >
+              Anterior
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`grid h-8 w-8 place-items-center text-xs font-light transition ${
+                    currentPage === page
+                      ? "border border-foreground bg-foreground text-background"
+                      : "border border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="border border-border bg-background px-4 py-2 text-xs font-light uppercase tracking-[0.2em] transition hover:border-foreground disabled:pointer-events-none disabled:opacity-30"
+            >
+              Seguinte
+            </button>
+          </div>
+        )}
+
         <div className="mt-14 flex justify-center">
           <Link
             to="/produtos"
