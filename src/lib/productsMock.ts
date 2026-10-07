@@ -106,3 +106,15 @@ export const CONTACT = {
   instagram: "@modapremium",
   city: "São Paulo — SP",
 };
+
+export function generateSlug(text: string) {
+  return text
+    .toString()
+    .normalize("NFD") // Separa os acentos das letras
+    .replace(/[\u0300-\u036f]/g, "") // Remove os acentos
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-") // Substitui espaços por hifens
+    .replace(/[^\w-]+/g, "") // Remove caracteres especiais
+    .replace(/--+/g, "-"); // Evita hifens duplos
+}
