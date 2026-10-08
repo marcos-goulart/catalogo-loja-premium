@@ -20,8 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ContactFooter } from "@/components/ui/contact-footer";
 
-export const Route = createFileRoute("/colecao-outono")({
+export const Route = createFileRoute("/colecao-atual")({
   head: () => ({
     meta: [
       { title: "Coleção Outono 2026 — Moda Premium" },
@@ -308,6 +309,8 @@ function ColecaoOutono() {
       </main>
 
       <ProductSheet product={selected} onClose={close} />
+
+      <ContactFooter />
     </div>
   );
 }
