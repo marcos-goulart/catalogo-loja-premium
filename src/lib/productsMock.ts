@@ -98,13 +98,13 @@ export const autumnCollection: Product[] = [
 export const formatBRL = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-export const WHATSAPP_NUMBER = "5511999999999";
+export const WHATSAPP_NUMBER = "5521999999999";
 
 export const CONTACT = {
   whatsapp: WHATSAPP_NUMBER,
   email: "contato@modapremium.com.br",
   instagram: "@modapremium",
-  city: "São Paulo — SP",
+  city: "Magé — RJ",
 };
 
 export function generateSlug(text: string) {

@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ContactFooter } from "@/components/ui/contact-footer";
 
 export const Route = createFileRoute("/produtos")({
   head: () => ({
@@ -260,9 +261,7 @@ function Produtos() {
         )}
       </main>
 
-      <footer className="border-t border-border px-6 py-10 text-center text-xs tracking-[0.2em] text-muted-foreground">
-        © 2026 MODA PREMIUM
-      </footer>
+      <ContactFooter />
 
       <ProductSheet product={selected} onClose={close} />
     </div>

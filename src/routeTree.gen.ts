@@ -10,7 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ColecaoOutonoRouteImport } from './routes/colecao-outono'
+import { Route as ColecaoAtualRouteImport } from './routes/colecao-atual'
 import { Route as ProdutosRouteImport } from './routes/produtos'
 
 const IndexRoute = IndexRouteImport.update({
@@ -18,9 +18,9 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ColecaoOutonoRoute = ColecaoOutonoRouteImport.update({
-  id: '/colecao-outono',
-  path: '/colecao-outono',
+const ColecaoAtualRoute = ColecaoAtualRouteImport.update({
+  id: '/colecao-atual',
+  path: '/colecao-atual',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProdutosRoute = ProdutosRouteImport.update({
@@ -31,31 +31,31 @@ const ProdutosRoute = ProdutosRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/colecao-outono': typeof ColecaoOutonoRoute
+  '/colecao-atual': typeof ColecaoAtualRoute
   '/produtos': typeof ProdutosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/colecao-outono': typeof ColecaoOutonoRoute
+  '/colecao-atual': typeof ColecaoAtualRoute
   '/produtos': typeof ProdutosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/colecao-outono': typeof ColecaoOutonoRoute
+  '/colecao-atual': typeof ColecaoAtualRoute
   '/produtos': typeof ProdutosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/colecao-outono' | '/produtos'
+  fullPaths: '/' | '/colecao-atual' | '/produtos'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/colecao-outono' | '/produtos'
-  id: '__root__' | '/' | '/colecao-outono' | '/produtos'
+  to: '/' | '/colecao-atual' | '/produtos'
+  id: '__root__' | '/' | '/colecao-atual' | '/produtos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ColecaoOutonoRoute: typeof ColecaoOutonoRoute
+  ColecaoAtualRoute: typeof ColecaoAtualRoute
   ProdutosRoute: typeof ProdutosRoute
 }
 
@@ -68,11 +68,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/colecao-outono': {
-      id: '/colecao-outono'
-      path: '/colecao-outono'
-      fullPath: '/colecao-outono'
-      preLoaderRoute: typeof ColecaoOutonoRouteImport
+    '/colecao-atual': {
+      id: '/colecao-atual'
+      path: '/colecao-atual'
+      fullPath: '/colecao-atual'
+      preLoaderRoute: typeof ColecaoAtualRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/produtos': {
@@ -87,7 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ColecaoOutonoRoute: ColecaoOutonoRoute,
+  ColecaoAtualRoute: ColecaoAtualRoute,
   ProdutosRoute: ProdutosRoute,
 }
 export const routeTree = rootRouteImport
