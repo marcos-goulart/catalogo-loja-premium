@@ -20,12 +20,12 @@ export const productType = defineType({
           { title: 'Feminino', value: 'feminino' },
           { title: 'Masculino', value: 'masculino' },
           { title: 'Infantil', value: 'infantil' },
-          { title: 'Unissexo', value: 'unissexo' }
+          { title: 'Unissexo', value: 'unissexo' },
         ],
-        layout: 'radio', // Exibe os botões lado a lado no painel
-        direction: 'horizontal'
+        layout: 'radio',
+        direction: 'horizontal',
       },
-      validation: (Rule) => Rule.required()
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'category',
@@ -37,17 +37,26 @@ export const productType = defineType({
           { title: 'Calças', value: 'calcas' },
           { title: 'Vestidos', value: 'vestidos' },
           { title: 'Casacos & Jaquetas', value: 'casacos' },
-          { title: 'Acessórios', value: 'acessorios' }
+          { title: 'Acessórios', value: 'acessorios' },
         ],
-        layout: 'dropdown'
+        layout: 'dropdown',
       },
-      validation: (Rule) => Rule.required()
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'collection',
       title: 'Coleção / Estação',
-      type: 'reference',
-      to: [{ type: 'collection' }]
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Verão', value: 'verao' },
+          { title: 'Outono', value: 'outono' },
+          { title: 'Inverno', value: 'inverno' },
+          { title: 'Primavera', value: 'primavera' },
+        ],
+        layout: 'dropdown',
+      },
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'price',
@@ -59,7 +68,7 @@ export const productType = defineType({
       name: 'gallery',
       title: 'Galeria de Fotos',
       type: 'array',
-      of: [{type: 'image', options: {hotspot: true}}],
+      of: [{ type: 'image', options: { hotspot: true } }],
       options: {
         layout: 'grid',
       },
@@ -68,24 +77,39 @@ export const productType = defineType({
       name: 'sizes',
       title: 'Tamanhos Disponíveis',
       type: 'array',
-      of: [{type: 'string'}],
+      of: [
+        {
+          type: 'string',
+          options: {
+            list: [
+              { title: 'PP', value: 'PP' },
+              { title: 'P', value: 'P' },
+              { title: 'M', value: 'M' },
+              { title: 'G', value: 'G' },
+              { title: 'GG', value: 'GG' },
+              { title: 'XG', value: 'XG' },
+              { title: 'Único', value: 'Único' },
+            ],
+          },
+        },
+      ],
       options: {
         list: [
-          {title: 'Tamanho Único', value: 'U'},
-          {title: 'PP', value: 'PP'},
-          {title: 'P', value: 'P'},
-          {title: 'M', value: 'M'},
-          {title: 'G', value: 'G'},
-          {title: 'GG', value: 'GG'},
+          { title: 'PP', value: 'PP' },
+          { title: 'P', value: 'P' },
+          { title: 'M', value: 'M' },
+          { title: 'G', value: 'G' },
+          { title: 'GG', value: 'GG' },
+          { title: 'XG', value: 'XG' },
+          { title: 'Único', value: 'Único' },
         ],
-        layout: 'tags',
       },
     }),
     defineField({
       name: 'colors',
       title: 'Cores Disponíveis',
       type: 'array',
-      of: [{type: 'string'}],
+      of: [{ type: 'string' }],
       description: 'Prima Enter após escrever cada cor (ex: Azul Marinho, Preto).',
       options: {
         layout: 'tags',

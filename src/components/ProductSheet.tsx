@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
-import { X, MessageCircle, ShoppingBag, Check } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { X, MessageCircle, ShoppingBag, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { type Product, formatBRL, WHATSAPP_NUMBER } from "@/lib/productsMock";
 import { useCartStore } from "@/store/useCartStore";
+
+const STANDARD_SIZES = ["PP", "P", "M", "G", "GG", "XG", "Único"];
 
 export function ProductSheet({
   product,
@@ -16,18 +18,92 @@ export function ProductSheet({
   const [isAdded, setIsAdded] = useState(false);
   const { addItem } = useCartStore();
 
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const mouseStartX = useRef<number | null>(null);
+  const isMouseDown = useRef(false);
+
   useEffect(() => {
     setImg(0);
     setSize(null);
     setColor(product?.colors[0] ?? null);
     setIsAdded(false);
     if (!product) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft" && product.gallery.length > 1) {
+        setImg((prev) => (prev - 1 + product.gallery.length) % product.gallery.length);
+      }
+      if (e.key === "ArrowRight" && product.gallery.length > 1) {
+        setImg((prev) => (prev + 1) % product.gallery.length);
+      }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [product, onClose]);
 
   if (!product) return null;
+
+  const totalImages = product.gallery.length;
+
+  const prevImg = () => {
+    if (totalImages <= 1) return;
+    setImg((curr) => (curr - 1 + totalImages) % totalImages);
+  };
+
+  const nextImg = () => {
+    if (totalImages <= 1) return;
+    setImg((curr) => (curr + 1) % totalImages);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.targetTouches[0];
+    if (touch) {
+      touchStartX.current = touch.clientX;
+      touchEndX.current = null;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touch = e.targetTouches[0];
+    if (touch) {
+      touchEndX.current = touch.clientX;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    const diff = touchStartX.current - touchEndX.current;
+    if (diff > 45) {
+      nextImg();
+    } else if (diff < -45) {
+      prevImg();
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    mouseStartX.current = e.clientX;
+    isMouseDown.current = true;
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!isMouseDown.current || mouseStartX.current === null) return;
+    const diff = mouseStartX.current - e.clientX;
+    if (diff > 45) {
+      nextImg();
+    } else if (diff < -45) {
+      prevImg();
+    }
+    isMouseDown.current = false;
+    mouseStartX.current = null;
+  };
+
+  const handleMouseLeave = () => {
+    isMouseDown.current = false;
+    mouseStartX.current = null;
+  };
 
   const handleAddToCart = () => {
     if (!size || !product.inStock) return;
@@ -50,6 +126,10 @@ export function ProductSheet({
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
+  // Montar lista de tamanhos disponíveis a exibir
+  const availableSizes = STANDARD_SIZES.filter((s) => product.sizes.includes(s));
+  const displaySizes = availableSizes.length > 0 ? availableSizes : product.sizes;
+
   return (
     <div className="fixed inset-0 z-50" data-lenis-prevent>
       <div
@@ -60,60 +140,134 @@ export function ProductSheet({
         <button
           onClick={onClose}
           aria-label="Fechar"
-          className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full bg-background/90"
+          className="absolute right-4 top-4 z-20 grid h-10 w-10 place-items-center rounded-full bg-background/90 text-foreground transition hover:bg-background"
         >
           <X className="h-5 w-5" />
         </button>
-        <div className="aspect-[4/5] bg-muted">
-          <img
-            src={product.gallery[img]}
-            alt={product.name}
-            className="h-full w-full object-cover"
-          />
+
+        {/* Galeria de imagem com botões laterais e suporte a arrastar/swipe */}
+        <div
+          className="relative aspect-[4/5] bg-muted overflow-hidden select-none cursor-grab active:cursor-grabbing"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+        >
+          {totalImages > 0 && (
+            <img
+              src={product.gallery[img] || product.gallery[0]}
+              alt={product.name}
+              draggable={false}
+              className="h-full w-full object-cover transition-opacity duration-300 pointer-events-none"
+            />
+          )}
+
+          {/* Botões laterais < e > */}
+          {totalImages > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImg();
+                }}
+                aria-label="Imagem anterior"
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 grid h-10 w-10 place-items-center rounded-full bg-background/80 backdrop-blur-sm text-foreground shadow-md transition hover:bg-background active:scale-95"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImg();
+                }}
+                aria-label="Próxima imagem"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 grid h-10 w-10 place-items-center rounded-full bg-background/80 backdrop-blur-sm text-foreground shadow-md transition hover:bg-background active:scale-95"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+
+              {/* Indicador de imagem atual */}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5 rounded-full bg-background/60 backdrop-blur-sm px-2.5 py-1">
+                {product.gallery.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all ${
+                      i === img ? "w-4 bg-foreground" : "w-1.5 bg-foreground/30"
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
-        <div className="flex gap-2 px-6 pt-4">
-          {product.gallery.map((g, i) => (
-            <button
-              key={g}
-              onClick={() => setImg(i)}
-              className={`h-20 w-16 overflow-hidden border-2 ${i === img ? "border-foreground" : "border-transparent"}`}
-            >
-              <img src={g} alt="" className="h-full w-full object-cover" />
-            </button>
-          ))}
-        </div>
+
+        {totalImages > 1 && (
+          <div className="flex gap-2 px-6 pt-4 overflow-x-auto">
+            {product.gallery.map((g, i) => (
+              <button
+                key={g + i}
+                onClick={() => setImg(i)}
+                className={`h-20 w-16 shrink-0 overflow-hidden border-2 transition ${
+                  i === img
+                    ? "border-foreground"
+                    : "border-transparent opacity-60 hover:opacity-100"
+                }`}
+              >
+                <img src={g} alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="space-y-6 p-6 pb-10">
           <div>
             <h2 className="text-2xl font-light tracking-tight">{product.name}</h2>
             <p className="mt-1 text-lg">{formatBRL(product.price)}</p>
           </div>
-          <div>
-            <p className="mb-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Cor: {color}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {product.colors.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className={`border px-4 py-2 text-sm transition ${c === color ? "border-foreground" : "border-border text-muted-foreground"}`}
-                >
-                  {c}
-                </button>
-              ))}
+
+          {product.colors && product.colors.length > 0 && (
+            <div>
+              <p className="mb-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                Cor: {color}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {product.colors.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setColor(c)}
+                    className={`border px-4 py-2 text-sm transition ${
+                      c === color
+                        ? "border-foreground font-medium"
+                        : "border-border text-muted-foreground hover:border-foreground"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
           <div>
             <p className="mb-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">Tamanho</p>
-            <div className="grid grid-cols-4 gap-2">
-              {["P", "M", "G", "GG"].map((s) => {
-                const ok = product.sizes.includes(s);
+            <div className="flex flex-wrap gap-2">
+              {displaySizes.map((s) => {
+                const isAvailable = product.sizes.includes(s);
                 return (
                   <button
                     key={s}
-                    disabled={!ok}
+                    disabled={!isAvailable}
                     onClick={() => setSize(s)}
-                    className={`h-12 border text-sm transition disabled:opacity-30 disabled:line-through ${s === size ? "border-foreground bg-foreground text-background" : "border-border hover:border-foreground"}`}
+                    className={`h-11 min-w-[3rem] px-3 border text-sm transition disabled:opacity-30 disabled:line-through ${
+                      s === size
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-border hover:border-foreground"
+                    }`}
                   >
                     {s}
                   </button>
@@ -136,7 +290,11 @@ export function ProductSheet({
               ) : (
                 <>
                   <ShoppingBag className="h-4 w-4" />
-                  {!product.inStock ? "Esgotado" : size ? "Adicionar à Sacola" : "Selecione um tamanho"}
+                  {!product.inStock
+                    ? "Esgotado"
+                    : size
+                      ? "Adicionar à Sacola"
+                      : "Selecione um tamanho"}
                 </>
               )}
             </button>

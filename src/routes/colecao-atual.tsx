@@ -4,13 +4,9 @@ import Lenis from "@studio-freight/lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowLeft, Search } from "lucide-react";
-import {
-  autumnCollection,
-  products,
-  formatBRL,
-  type Product,
-  generateSlug,
-} from "@/lib/productsMock";
+import { formatBRL, type Product } from "@/lib/productsMock";
+import { sanity } from "@/lib/sanity";
+import { getCurrentSeason, getSeasonSanityValue, generateSlug } from "@/lib/utils";
 import { ProductSheet } from "@/components/ProductSheet";
 import { CartDrawer } from "@/components/CartDrawer";
 import {
@@ -23,35 +19,85 @@ import {
 import { ContactFooter } from "@/components/ui/contact-footer";
 
 export const Route = createFileRoute("/colecao-atual")({
-  head: () => ({
-    meta: [
-      { title: "Coleção Outono 2026 — Moda Premium" },
-      {
-        name: "description",
-        content:
-          "As peças selecionadas da Coleção Outono 2026. Escolha a sua e finalize pelo WhatsApp.",
-      },
-      { property: "og:title", content: "Coleção Outono 2026 — Moda Premium" },
-      {
-        property: "og:description",
-        content:
-          "As peças selecionadas da Coleção Outono 2026. Escolha a sua e finalize pelo WhatsApp.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
-  component: ColecaoOutono,
+  head: () => {
+    const season = getCurrentSeason();
+    return {
+      meta: [
+        { title: `Coleção ${season} — Moda Premium` },
+        {
+          name: "description",
+          content: `As peças selecionadas da Coleção ${season}. Escolha a sua e finalize pelo WhatsApp.`,
+        },
+        { property: "og:title", content: `Coleção ${season} — Moda Premium` },
+        {
+          property: "og:description",
+          content: `As peças selecionadas da Coleção ${season}. Escolha a sua e finalize pelo WhatsApp.`,
+        },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+    };
+  },
+  component: ColecaoAtual,
 });
 
 const ITEMS_PER_PAGE = 32;
 
-function ColecaoOutono() {
+const CATEGORIES = [
+  { label: "Todos", value: "todos" },
+  { label: "Camisetas & Blusas", value: "camisetas" },
+  { label: "Calças", value: "calcas" },
+  { label: "Vestidos", value: "vestidos" },
+  { label: "Casacos & Jaquetas", value: "casacos" },
+  { label: "Acessórios", value: "acessorios" },
+];
+
+function ColecaoAtual() {
+  const currentSeason = getCurrentSeason();
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selected, setSelected] = useState<Product | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState("todos");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("a-z");
   const [currentPage, setCurrentPage] = useState(1);
   const lenisRef = useRef<Lenis | null>(null);
+
+  // Fetch real dos produtos da coleção da estação atual no Sanity
+  useEffect(() => {
+    setIsLoading(true);
+    const season = getSeasonSanityValue();
+    const query = `*[_type == "product" && (collection == $season || collection->seasonIndicator == $season)]{
+      "id": _id,
+      name,
+      price,
+      "gallery": gallery[].asset->url,
+      inStock,
+      department,
+      category,
+      sizes,
+      colors
+    }`;
+
+    sanity
+      .fetch<Product[]>(query, { season })
+      .then((data) => {
+        const normalized = (data || []).map((p) => ({
+          ...p,
+          gallery: p.gallery && p.gallery.length > 0 ? p.gallery : [],
+          sizes: p.sizes && p.sizes.length > 0 ? p.sizes : ["U"],
+          colors: p.colors && p.colors.length > 0 ? p.colors : ["Padrão"],
+          inStock: p.inStock ?? true,
+        }));
+        setDbProducts(normalized);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar coleção atual do Sanity:", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
 
   const close = useCallback(() => {
     setSelected(null);
@@ -68,33 +114,35 @@ function ColecaoOutono() {
     setSelected(product);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
-      // Aqui está a mágica: em vez de product.id, passamos o nome formatado
       url.searchParams.set("produto", generateSlug(product.name));
       window.history.pushState({}, "", url.toString());
     }
   }, []);
 
+  // Sincronização de Deep Linking quando os produtos do Sanity chegam
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    // Procura em todas as listas disponíveis neste arquivo (products e collection)
-    const allProducts = [...products, ...autumnCollection];
+    if (typeof window === "undefined" || dbProducts.length === 0) return;
 
     const params = new URLSearchParams(window.location.search);
     const prodSlug = params.get("produto");
 
     if (prodSlug) {
-      const found = allProducts.find((p) => generateSlug(p.name) === prodSlug);
+      const found = dbProducts.find((p) => generateSlug(p.name) === prodSlug);
       if (found) {
         setSelected(found);
       }
     }
+  }, [dbProducts]);
+
+  // Listener para botões voltar/avançar do navegador (History API)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
     const handlePopState = () => {
       const currentParams = new URLSearchParams(window.location.search);
       const currentProdSlug = currentParams.get("produto");
       if (currentProdSlug) {
-        const found = allProducts.find((p) => generateSlug(p.name) === currentProdSlug);
+        const found = dbProducts.find((p) => generateSlug(p.name) === currentProdSlug);
         setSelected(found || null);
       } else {
         setSelected(null);
@@ -103,11 +151,11 @@ function ColecaoOutono() {
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
+  }, [dbProducts]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sortOption]);
+  }, [searchTerm, sortOption, selectedCategory]);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -142,15 +190,24 @@ function ColecaoOutono() {
       gsap.ticker.remove(tick);
       lenis.destroy();
     };
-  }, []);
+  }, [dbProducts]);
 
   useEffect(() => {
     if (selected) lenisRef.current?.stop();
     else lenisRef.current?.start();
   }, [selected]);
 
-  const filteredAndSortedProducts = autumnCollection
-    .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase().trim()))
+  const filteredAndSortedProducts = dbProducts
+    .filter((p) => {
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase().trim());
+      if (!matchesSearch) return false;
+      if (selectedCategory === "todos") return true;
+      const cat = p.category?.toLowerCase() || "";
+      const target = selectedCategory.toLowerCase();
+      return (
+        cat === target || cat.includes(target) || (target === "camisetas" && cat.includes("blusa"))
+      );
+    })
     .sort((a, b) => {
       if (sortOption === "z-a") return b.name.localeCompare(a.name, "pt-BR");
       if (sortOption === "price-asc") return a.price - b.price;
@@ -174,7 +231,9 @@ function ColecaoOutono() {
           >
             <ArrowLeft className="mr-2 inline h-3.5 w-3.5" /> Voltar
           </Link>
-          <span className="text-sm font-medium tracking-[0.4em]">MODA PREMIUM</span>
+          <Link to="/" className="text-sm font-medium tracking-[0.4em] transition hover:opacity-80">
+            MODA PREMIUM
+          </Link>
           <div className="flex items-center">
             <CartDrawer />
           </div>
@@ -183,21 +242,71 @@ function ColecaoOutono() {
 
       <main className="px-4 py-16 md:px-12 md:py-24">
         <p className="page-anim mb-4 text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          Coleção Outono 2026
+          Coleção {currentSeason}
         </p>
         <h1 className="page-anim text-4xl font-light leading-[1.05] tracking-tight md:text-6xl">
-          Outono.
+          {currentSeason}.
           <br />
           Seleção essencial.
         </h1>
         <span className="page-anim mt-6 block text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          {filteredAndSortedProducts.length}{" "}
-          {filteredAndSortedProducts.length === 1 ? "peça" : "peças"}
+          {isLoading
+            ? "Carregando peças..."
+            : `${filteredAndSortedProducts.length} ${
+                filteredAndSortedProducts.length === 1 ? "peça" : "peças"
+              }`}
         </span>
 
+        {/* Filtros de Categoria: Mobile (Select vertical elegante) & Desktop (Abas minimalistas) */}
+        <div className="mb-8 mt-8">
+          {/* Mobile: Select vertical para não quebrar a tela */}
+          <div className="block md:hidden">
+            <span className="mb-2 block text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              Categoria
+            </span>
+            <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val)}>
+              <SelectTrigger className="w-full rounded-none border-foreground/20 bg-transparent text-xs font-light tracking-wide text-foreground hover:border-foreground focus:ring-0">
+                <SelectValue placeholder="Filtrar por categoria..." />
+              </SelectTrigger>
+              <SelectContent className="rounded-none border-border bg-background text-foreground">
+                {CATEGORIES.map((cat) => (
+                  <SelectItem
+                    key={cat.value}
+                    value={cat.value}
+                    className="cursor-pointer text-xs font-light tracking-wide"
+                  >
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Desktop: Abas minimalistas */}
+          <div className="hidden md:flex items-center gap-2 overflow-x-auto pb-1">
+            {CATEGORIES.map((cat) => {
+              const isActive = selectedCategory === cat.value;
+              return (
+                <button
+                  key={cat.value}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`px-4 py-2 text-xs uppercase tracking-[0.2em] transition-all border ${
+                    isActive
+                      ? "border-foreground bg-foreground text-background font-medium"
+                      : "border-border/60 text-muted-foreground hover:border-foreground hover:text-foreground"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Seção de Controles: Busca e Ordenação */}
-        <div className="mb-10 mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 sm:max-w-md">
+        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
@@ -208,12 +317,12 @@ function ColecaoOutono() {
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-3 sm:w-auto">
             <span className="shrink-0 text-xs uppercase tracking-[0.2em] text-muted-foreground">
               Ordenar:
             </span>
             <Select value={sortOption} onValueChange={(value) => setSortOption(value)}>
-              <SelectTrigger className="w-[220px] rounded-none border-foreground/20 bg-transparent text-sm font-light tracking-wide text-foreground hover:border-foreground focus:ring-0">
+              <SelectTrigger className="w-full sm:w-[220px] rounded-none border-foreground/20 bg-transparent text-sm font-light tracking-wide text-foreground hover:border-foreground focus:ring-0">
                 <SelectValue placeholder="Ordenar..." />
               </SelectTrigger>
               <SelectContent className="rounded-none border-border bg-background text-foreground">
@@ -240,10 +349,19 @@ function ColecaoOutono() {
           </div>
         </div>
 
-        {filteredAndSortedProducts.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+            <p className="animate-pulse text-xs uppercase tracking-[0.3em] text-muted-foreground">
+              Carregando catálogo...
+            </p>
+          </div>
+        ) : filteredAndSortedProducts.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-sm font-light uppercase tracking-wider text-muted-foreground">
-              Nenhuma peça encontrada para "{searchTerm}".
+              {searchTerm
+                ? `Nenhuma peça encontrada para "${searchTerm}".`
+                : "Nenhuma peça disponível nesta coleção no momento."}
             </p>
           </div>
         ) : (
@@ -273,7 +391,7 @@ function ColecaoOutono() {
         )}
 
         {/* Controles de Paginação Numérica */}
-        {totalPages > 1 && (
+        {!isLoading && totalPages > 1 && (
           <div className="mt-14 flex flex-wrap items-center justify-center gap-2">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}

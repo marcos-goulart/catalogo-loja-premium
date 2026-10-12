@@ -1,4 +1,3 @@
-import { collectionType } from "./collectionType";
 import { productType } from "./productType";
 
-export const schemaTypes = [productType, collectionType]
+export const schemaTypes = [productType]

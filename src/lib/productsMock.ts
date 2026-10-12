@@ -6,6 +6,8 @@ export type Product = {
   sizes: string[];
   colors: string[];
   inStock: boolean;
+  department?: string;
+  category?: string;
 };
 
 const u = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&q=80`;
