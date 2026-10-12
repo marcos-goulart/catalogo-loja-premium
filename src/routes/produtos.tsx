@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { ArrowLeft, Search } from "lucide-react";
-import { products, formatBRL, type Product, generateSlug } from "@/lib/productsMock";
+import { formatBRL, type Product } from "@/lib/productsMock";
+import { sanity } from "@/lib/sanity";
+import { generateSlug } from "@/lib/utils";
 import { ProductSheet } from "@/components/ProductSheet";
 import { CartDrawer } from "@/components/CartDrawer";
 import {
@@ -35,11 +37,58 @@ export const Route = createFileRoute("/produtos")({
 
 const ITEMS_PER_PAGE = 32;
 
+const CATEGORIES = [
+  { label: "Todos", value: "todos" },
+  { label: "Camisetas & Blusas", value: "camisetas" },
+  { label: "Calças", value: "calcas" },
+  { label: "Vestidos", value: "vestidos" },
+  { label: "Casacos & Jaquetas", value: "casacos" },
+  { label: "Acessórios", value: "acessorios" },
+];
+
 function Produtos() {
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selected, setSelected] = useState<Product | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState("todos");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("a-z");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Fetch real de todos os produtos no Sanity
+  useEffect(() => {
+    setIsLoading(true);
+    const query = `*[_type == "product"]{
+      "id": _id,
+      name,
+      price,
+      "gallery": gallery[].asset->url,
+      inStock,
+      department,
+      category,
+      sizes,
+      colors
+    }`;
+
+    sanity
+      .fetch<Product[]>(query)
+      .then((data) => {
+        const normalized = (data || []).map((p) => ({
+          ...p,
+          gallery: p.gallery && p.gallery.length > 0 ? p.gallery : [],
+          sizes: p.sizes && p.sizes.length > 0 ? p.sizes : ["U"],
+          colors: p.colors && p.colors.length > 0 ? p.colors : ["Padrão"],
+          inStock: p.inStock ?? true,
+        }));
+        setDbProducts(normalized);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar produtos do Sanity:", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
 
   const close = useCallback(() => {
     setSelected(null);
@@ -56,33 +105,35 @@ function Produtos() {
     setSelected(product);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
-      // Aqui está a mágica: em vez de product.id, passamos o nome formatado
       url.searchParams.set("produto", generateSlug(product.name));
       window.history.pushState({}, "", url.toString());
     }
   }, []);
 
+  // Sincronização de Deep Linking quando os produtos do Sanity chegam
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    // Procura em todas as listas disponíveis neste arquivo (products e collection)
-    const allProducts = products;
+    if (typeof window === "undefined" || dbProducts.length === 0) return;
 
     const params = new URLSearchParams(window.location.search);
     const prodSlug = params.get("produto");
 
     if (prodSlug) {
-      const found = allProducts.find((p) => generateSlug(p.name) === prodSlug);
+      const found = dbProducts.find((p) => generateSlug(p.name) === prodSlug);
       if (found) {
         setSelected(found);
       }
     }
+  }, [dbProducts]);
+
+  // Listener para botões voltar/avançar do navegador (History API)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
     const handlePopState = () => {
       const currentParams = new URLSearchParams(window.location.search);
       const currentProdSlug = currentParams.get("produto");
       if (currentProdSlug) {
-        const found = allProducts.find((p) => generateSlug(p.name) === currentProdSlug);
+        const found = dbProducts.find((p) => generateSlug(p.name) === currentProdSlug);
         setSelected(found || null);
       } else {
         setSelected(null);
@@ -91,11 +142,11 @@ function Produtos() {
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
+  }, [dbProducts]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sortOption]);
+  }, [searchTerm, sortOption, selectedCategory]);
 
   useEffect(() => {
     document.body.style.overflow = selected ? "hidden" : "";
@@ -104,8 +155,17 @@ function Produtos() {
     };
   }, [selected]);
 
-  const filteredAndSortedProducts = products
-    .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase().trim()))
+  const filteredAndSortedProducts = dbProducts
+    .filter((p) => {
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase().trim());
+      if (!matchesSearch) return false;
+      if (selectedCategory === "todos") return true;
+      const cat = p.category?.toLowerCase() || "";
+      const target = selectedCategory.toLowerCase();
+      return (
+        cat === target || cat.includes(target) || (target === "camisetas" && cat.includes("blusa"))
+      );
+    })
     .sort((a, b) => {
       if (sortOption === "z-a") return b.name.localeCompare(a.name, "pt-BR");
       if (sortOption === "price-asc") return a.price - b.price;
@@ -130,7 +190,9 @@ function Produtos() {
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Link>
-          <span className="text-sm font-medium tracking-[0.4em]">MODA PREMIUM</span>
+          <Link to="/" className="text-sm font-medium tracking-[0.4em] transition hover:opacity-80">
+            MODA PREMIUM
+          </Link>
           <div className="flex items-center">
             <CartDrawer />
           </div>
@@ -142,15 +204,65 @@ function Produtos() {
           <div>
             <h1 className="text-2xl font-light tracking-tight md:text-3xl">Todos os Produtos</h1>
             <p className="mt-1 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              {filteredAndSortedProducts.length}{" "}
-              {filteredAndSortedProducts.length === 1 ? "peça" : "peças"}
+              {isLoading
+                ? "Carregando peças..."
+                : `${filteredAndSortedProducts.length} ${
+                    filteredAndSortedProducts.length === 1 ? "peça" : "peças"
+                  }`}
             </p>
+          </div>
+        </div>
+
+        {/* Filtros de Categoria: Mobile (Select vertical elegante) & Desktop (Abas minimalistas) */}
+        <div className="mb-8">
+          {/* Mobile: Select vertical para não quebrar a tela */}
+          <div className="block md:hidden">
+            <span className="mb-2 block text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              Categoria
+            </span>
+            <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val)}>
+              <SelectTrigger className="w-full rounded-none border-foreground/20 bg-transparent text-xs font-light tracking-wide text-foreground hover:border-foreground focus:ring-0">
+                <SelectValue placeholder="Filtrar por categoria..." />
+              </SelectTrigger>
+              <SelectContent className="rounded-none border-border bg-background text-foreground">
+                {CATEGORIES.map((cat) => (
+                  <SelectItem
+                    key={cat.value}
+                    value={cat.value}
+                    className="cursor-pointer text-xs font-light tracking-wide"
+                  >
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Desktop: Abas minimalistas */}
+          <div className="hidden md:flex items-center gap-2 overflow-x-auto pb-1">
+            {CATEGORIES.map((cat) => {
+              const isActive = selectedCategory === cat.value;
+              return (
+                <button
+                  key={cat.value}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`px-4 py-2 text-xs uppercase tracking-[0.2em] transition-all border ${
+                    isActive
+                      ? "border-foreground bg-foreground text-background font-medium"
+                      : "border-border/60 text-muted-foreground hover:border-foreground hover:text-foreground"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Seção de Controles: Busca e Ordenação */}
         <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 sm:max-w-md">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
@@ -161,12 +273,12 @@ function Produtos() {
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-3 sm:w-auto">
             <span className="shrink-0 text-xs uppercase tracking-[0.2em] text-muted-foreground">
               Ordenar:
             </span>
             <Select value={sortOption} onValueChange={(value) => setSortOption(value)}>
-              <SelectTrigger className="w-[220px] rounded-none border-foreground/20 bg-transparent text-sm font-light tracking-wide text-foreground hover:border-foreground focus:ring-0">
+              <SelectTrigger className="w-full sm:w-[220px] rounded-none border-foreground/20 bg-transparent text-sm font-light tracking-wide text-foreground hover:border-foreground focus:ring-0">
                 <SelectValue placeholder="Ordenar..." />
               </SelectTrigger>
               <SelectContent className="rounded-none border-border bg-background text-foreground">
@@ -193,10 +305,19 @@ function Produtos() {
           </div>
         </div>
 
-        {filteredAndSortedProducts.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+            <p className="animate-pulse text-xs uppercase tracking-[0.3em] text-muted-foreground">
+              Carregando catálogo...
+            </p>
+          </div>
+        ) : filteredAndSortedProducts.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-sm font-light uppercase tracking-wider text-muted-foreground">
-              Nenhuma peça encontrada para "{searchTerm}".
+              {searchTerm
+                ? `Nenhuma peça encontrada para "${searchTerm}".`
+                : "Nenhum produto cadastrado no momento."}
             </p>
           </div>
         ) : (
@@ -226,7 +347,7 @@ function Produtos() {
         )}
 
         {/* Controles de Paginação Numérica */}
-        {totalPages > 1 && (
+        {!isLoading && totalPages > 1 && (
           <div className="mt-14 flex flex-wrap items-center justify-center gap-2">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}

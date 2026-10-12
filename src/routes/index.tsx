@@ -3,17 +3,12 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Lenis from "@studio-freight/lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowRight, Search } from "lucide-react";
-import { collection, products, formatBRL, type Product, generateSlug } from "@/lib/productsMock";
+import { ArrowRight } from "lucide-react";
+import { formatBRL, type Product } from "@/lib/productsMock";
+import { sanity } from "@/lib/sanity";
+import { getCurrentSeason, generateSlug } from "@/lib/utils";
 import { ProductSheet } from "@/components/ProductSheet";
 import { CartDrawer } from "@/components/CartDrawer";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ContactFooter } from "@/components/ui/contact-footer";
 
 export const Route = createFileRoute("/")({
@@ -39,13 +34,49 @@ const HERO =
 const ITEMS_PER_PAGE = 32;
 
 function Index() {
+  const currentSeason = getCurrentSeason();
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selected, setSelected] = useState<Product | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortOption, setSortOption] = useState("a-z");
   const [currentPage, setCurrentPage] = useState(1);
   const heroRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
+
+  // Fetch real dos produtos no Sanity
+  useEffect(() => {
+    setIsLoading(true);
+    const query = `*[_type == "product"]{
+      "id": _id,
+      name,
+      price,
+      "gallery": gallery[].asset->url,
+      inStock,
+      department,
+      category,
+      sizes,
+      colors
+    }`;
+
+    sanity
+      .fetch<Product[]>(query)
+      .then((data) => {
+        const normalized = (data || []).map((p) => ({
+          ...p,
+          gallery: p.gallery && p.gallery.length > 0 ? p.gallery : [],
+          sizes: p.sizes && p.sizes.length > 0 ? p.sizes : ["U"],
+          colors: p.colors && p.colors.length > 0 ? p.colors : ["Padrão"],
+          inStock: p.inStock ?? true,
+        }));
+        setDbProducts(normalized);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar catálogo do Sanity:", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
 
   const close = useCallback(() => {
     setSelected(null);
@@ -62,33 +93,35 @@ function Index() {
     setSelected(product);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
-      // Aqui está a mágica: em vez de product.id, passamos o nome formatado
       url.searchParams.set("produto", generateSlug(product.name));
       window.history.pushState({}, "", url.toString());
     }
   }, []);
 
+  // Sincronização de Deep Linking quando os produtos do Sanity chegam
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    // Procura em todas as listas disponíveis neste arquivo (products e collection)
-    const allProducts = [...products, ...collection];
+    if (typeof window === "undefined" || dbProducts.length === 0) return;
 
     const params = new URLSearchParams(window.location.search);
     const prodSlug = params.get("produto");
 
     if (prodSlug) {
-      const found = allProducts.find((p) => generateSlug(p.name) === prodSlug);
+      const found = dbProducts.find((p) => generateSlug(p.name) === prodSlug);
       if (found) {
         setSelected(found);
       }
     }
+  }, [dbProducts]);
+
+  // Listener para botões voltar/avançar do navegador (History API)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
     const handlePopState = () => {
       const currentParams = new URLSearchParams(window.location.search);
       const currentProdSlug = currentParams.get("produto");
       if (currentProdSlug) {
-        const found = allProducts.find((p) => generateSlug(p.name) === currentProdSlug);
+        const found = dbProducts.find((p) => generateSlug(p.name) === currentProdSlug);
         setSelected(found || null);
       } else {
         setSelected(null);
@@ -97,11 +130,7 @@ function Index() {
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, sortOption]);
+  }, [dbProducts]);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -137,24 +166,15 @@ function Index() {
       gsap.ticker.remove(tick);
       lenis.destroy();
     };
-  }, []);
+  }, [dbProducts]);
 
   useEffect(() => {
     if (selected) lenisRef.current?.stop();
     else lenisRef.current?.start();
   }, [selected]);
 
-  const filteredAndSortedProducts = collection
-    .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase().trim()))
-    .sort((a, b) => {
-      if (sortOption === "z-a") return b.name.localeCompare(a.name, "pt-BR");
-      if (sortOption === "price-asc") return a.price - b.price;
-      if (sortOption === "price-desc") return b.price - a.price;
-      return a.name.localeCompare(b.name, "pt-BR");
-    });
-
-  const totalPages = Math.ceil(filteredAndSortedProducts.length / ITEMS_PER_PAGE) || 1;
-  const paginatedProducts = filteredAndSortedProducts.slice(
+  const totalPages = Math.ceil(dbProducts.length / ITEMS_PER_PAGE) || 1;
+  const paginatedProducts = dbProducts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
   );
@@ -164,7 +184,9 @@ function Index() {
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-md">
         <div className="flex h-16 items-center justify-between px-6 md:px-12">
           <div className="w-9" />
-          <span className="text-sm font-medium tracking-[0.4em]">MODA PREMIUM</span>
+          <Link to="/" className="text-sm font-medium tracking-[0.4em] transition hover:opacity-80">
+            MODA PREMIUM
+          </Link>
           <div className="flex items-center">
             <CartDrawer />
           </div>
@@ -179,7 +201,9 @@ function Index() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent" />
         <div className="relative w-full px-6 pb-16 text-background md:px-12 md:pb-24">
-          <p className="hero-anim mb-4 text-xs uppercase tracking-[0.3em]">Coleção Outono 2026</p>
+          <p className="hero-anim mb-4 text-xs uppercase tracking-[0.3em]">
+            Coleção {currentSeason} {new Date().getFullYear()}
+          </p>
           <h1 className="hero-anim max-w-3xl text-5xl font-light leading-[1.05] tracking-tight md:text-7xl">
             Essencial.
             <br />
@@ -202,61 +226,24 @@ function Index() {
           <div>
             <h2 className="text-2xl font-light tracking-tight md:text-3xl">A Coleção</h2>
             <p className="mt-1 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              {filteredAndSortedProducts.length}{" "}
-              {filteredAndSortedProducts.length === 1 ? "peça" : "peças"}
+              {isLoading
+                ? "Carregando peças..."
+                : `${dbProducts.length} ${dbProducts.length === 1 ? "peça" : "peças"}`}
             </p>
           </div>
         </div>
 
-        {/* Seção de Controles: Busca e Ordenação */}
-        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 sm:max-w-md">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar peça por nome..."
-              className="w-full border border-border bg-background py-2.5 pl-10 pr-4 text-xs font-light tracking-wide text-foreground placeholder:text-muted-foreground/70 transition-colors focus:border-foreground focus:outline-none"
-            />
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+            <p className="animate-pulse text-xs uppercase tracking-[0.3em] text-muted-foreground">
+              Carregando catálogo...
+            </p>
           </div>
-
-          <div className="flex items-center gap-3">
-            <span className="shrink-0 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Ordenar:
-            </span>
-            <Select value={sortOption} onValueChange={(value) => setSortOption(value)}>
-              <SelectTrigger className="w-[220px] rounded-none border-foreground/20 bg-transparent text-sm font-light tracking-wide text-foreground hover:border-foreground focus:ring-0">
-                <SelectValue placeholder="Ordenar..." />
-              </SelectTrigger>
-              <SelectContent className="rounded-none border-border bg-background text-foreground">
-                <SelectItem value="a-z" className="cursor-pointer text-xs font-light tracking-wide">
-                  A - Z
-                </SelectItem>
-                <SelectItem value="z-a" className="cursor-pointer text-xs font-light tracking-wide">
-                  Z - A
-                </SelectItem>
-                <SelectItem
-                  value="price-asc"
-                  className="cursor-pointer text-xs font-light tracking-wide"
-                >
-                  Preço: Menor para Maior
-                </SelectItem>
-                <SelectItem
-                  value="price-desc"
-                  className="cursor-pointer text-xs font-light tracking-wide"
-                >
-                  Preço: Maior para Menor
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {filteredAndSortedProducts.length === 0 ? (
+        ) : dbProducts.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-sm font-light uppercase tracking-wider text-muted-foreground">
-              Nenhuma peça encontrada para "{searchTerm}".
+              Nenhum produto cadastrado no momento.
             </p>
           </div>
         ) : (
@@ -289,7 +276,7 @@ function Index() {
         )}
 
         {/* Controles de Paginação Numérica */}
-        {totalPages > 1 && (
+        {!isLoading && totalPages > 1 && (
           <div className="mt-14 flex flex-wrap items-center justify-center gap-2">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
