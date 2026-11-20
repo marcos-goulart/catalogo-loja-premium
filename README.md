@@ -1,96 +1,129 @@
-# 🛍️ Catálogo de Moda Premium
+# 🛍️ Moda Premium — Catálogo E-commerce Jamstack
 
-> Catálogo digital de alta performance para moda e vestuário premium, desenvolvido sob a arquitetura **Jamstack** com gerenciamento de conteúdo headless via **Sanity.io** e conversão de vendas direta no **WhatsApp**.
+> Vitrine editorial de alta costura e moda contemporânea com fechamento de pedidos integrado ao WhatsApp, experiência de navegação ultrafluida (Lenis + GSAP) e painel administrativo Headless CMS completo via Sanity.io.
 
----
+[![Deploy no Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare_Pages-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://catalogo-loja-premium.pages.dev)
+[![Painel Sanity CMS](https://img.shields.io/badge/CMS-Sanity.io_v6-F03E2F?style=for-the-badge&logo=sanity&logoColor=white)](https://1m6eib8b.sanity.studio)
+[![React 19](https://img.shields.io/badge/React-19.2-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.2-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+[![Testes Automatizados](https://img.shields.io/badge/Vitest-19_Passed-4ADE80?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev)
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React-19.2-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
-  <img src="https://img.shields.io/badge/TypeScript-5.8-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Vite-8.1-646CFF?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
-  <img src="https://img.shields.io/badge/Sanity.io-v6-F03E2F?style=for-the-badge&logo=sanity&logoColor=white" alt="Sanity.io" />
-  <img src="https://img.shields.io/badge/Cloudflare_Pages-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Cloudflare" />
-</p>
+🌐 **Acesse a aplicação em produção:** [catalogo-loja-premium.pages.dev](https://catalogo-loja-premium.pages.dev)
 
 ---
 
 ## 📌 Visão Geral
 
-O **Catálogo de Moda Premium** é uma solução completa para marcas e confecções que buscam uma vitrine digital sofisticada aliada a um canal de atendimento humanizado. Em vez de depender de checkout tradicional com fricção e taxas elevadas, a plataforma permite aos clientes explorar peças com experiência visual refinada, selecionar tamanhos e cores, gerenciar a sacola de compras e finalizar o pedido diretamente com a equipe de vendas via WhatsApp, com mensagem estruturada em markdown.
+O **Moda Premium** é uma solução para marcas de vestuário de alto padrão que priorizam a estética visual, a performance técnica e a humanização no atendimento. Em vez de impor funis de checkout rígidos com altas taxas de abandono, a plataforma oferece uma experiência de compra moderna, intuitiva e sem atrito: o cliente explora o catálogo com fotos em alta definição, seleciona cores e tamanhos na grade, gerencia sua sacola de compras e finaliza o pedido diretamente com a equipe de consultoria via WhatsApp com uma mensagem estruturada e calculada automaticamente.
 
-A aplicação adota o conceito de **Monorepo**, contendo a loja virtual na raiz do repositório e o estúdio de gestão de conteúdo headless na pasta `/studio`.
+O repositório é organizado em formato **Monorepo**, contendo a vitrine virtual na raiz (`/`) e o estúdio de gerenciamento de conteúdo na pasta [`/studio`](./studio).
 
 ---
 
 ## ✨ Principais Funcionalidades
 
-- ⚡ **Catálogo Dinâmico via Sanity CMS**: Produtos sincronizados em tempo real através da API do Sanity com cache global em borda (`useCdn: true`), permitindo atualizações instantâneas de fotos, preços, tamanhos, cores e controle de disponibilidade.
-- 🍂 **Detecção Inteligente de Estações (Hemisfério Sul)**: Algoritmo automático que identifica o mês atual do calendário civil brasileiro para exibir dinamicamente banners, coleções temáticas (Primavera, Verão, Outono, Inverno) e SEO contextualizado sem necessidade de intervenção manual.
-- 🛒 **Carrinho com Estado Global Persistente (Zustand)**: Sacola de compras reativa com suporte a seleção granular de variações (tamanho e cor), cálculo instantâneo de subtotal e persistência no `localStorage`.
-- 💬 **Checkout Estruturado para WhatsApp**: Geração automática de link `wa.me` com mensagem pré-formatada contendo os itens, quantidades, especificações de grade (cor/tamanho), subtotal e chamada para pagamento e entrega.
-- 📱 **Galeria Mobile-First com Suporte a Gestos (Swipe)**: Visualizador de fotos com suporte nativo a gestos de arrastar/deslizar (*touch swipe* no celular e *mouse drag* no desktop), navegação por teclado (setas e ESC) e miniaturas interativas.
-- 🔍 **Busca em Tempo Real & Filtros Avançados**: Filtragem instantânea por texto, categorias de peças (Camisetas, Calças, Vestidos, Casacos, Acessórios) e ordenação dinâmica (ordem alfabética A-Z / Z-A e menor/maior preço).
-- 🎨 **Experiência Visual de Luxo**: Rolagem suave com **Lenis**, micro-animações com **GSAP** e design minimalista contemporâneo construído com **Tailwind CSS v4** e primitivos **Radix UI**.
+### ⚡ Catálogo Dinâmico & Sanity CMS Headless
+* **Projeção GROQ Otimizada:** Consultas enxutas que trazem apenas os campos vitais (`id`, `name`, `price`, `gallery`, `sizes`, `colors`, `inStock`), minimizando o payload JSON transferido na rede.
+* **Entrega Global via CDN:** Cache de borda ativo (`useCdn: true`) com renderização em formatos de última geração (`WebP`/`AVIF`).
+* **Redimensionamento Contextual e Otimização:** As fotos dos cards são redimensionadas em tempo real para `600px` com `loading="lazy"` e `decoding="async"`, enquanto o modal de detalhes carrega versões de até `1200px` para zoom e nitidez em telas retina.
+
+### 🍂 Coleções Inteligentes por Estação (Hemisfério Sul)
+* **Cálculo Dinâmico:** Identificação algorítmica do mês vigente no calendário brasileiro, direcionando automaticamente a coleção sazonal atual na rota [`/colecao-atual`](https://catalogo-loja-premium.pages.dev/colecao-atual) (Verão, Outono, Inverno e Primavera).
+* **Filtros Combinados:** Filtragem em tempo real por departamento, categoria (Camisetas, Calças, Vestidos, Casacos, Acessórios), barra de busca instantânea e ordenação dinâmica (ordem alfabética A-Z / Z-A e menor/maior preço).
+* **Paginação com Subida Suave:** Paginação balanceada em 12 itens por página que desliza suavemente até a âncora da grade (`#catalogo`) via motor do Lenis, eliminando saltos secos.
+
+### 🔗 Deep Linking & Preservação de Estado
+* **Deep Linking por Query String:** Cada produto aberto gera uma URL compartilhável no formato `?produto=slug-da-peca` sincronizada via History API (`pushState` / `replaceState`) e listeners de histórico (`popstate`).
+* **Preservação de Scroll:** Abrir ou fechar o modal não reseta a posição de rolagem da página atrás do drawer.
+* **Validação Rigorosa de Estoque:** Peças com `inStock === false` exibem badge elegante de **"Esgotado"**, desabilitam seleção de compra no `ProductSheet` e são bloqueadas programaticamente na store do Zustand.
+* **Sacola Reativa com Checkout WhatsApp:** Estado global persistido no `localStorage` (`zustand/middleware/persist`), cálculo instantâneo de subtotal e geração de link `wa.me` com resumo detalhado dos itens selecionados.
+
+### 🏎️ Engenharia de Performance & Experiência de Rolagem
+* **Sincronização Lenis + GSAP no Mesmo Ticker:** O loop de física do Lenis é acoplado diretamente ao `gsap.ticker.add(...)` com `lagSmoothing(0)`, garantindo rolagem suave a 60/120 FPS sem micro-engasgos (*zero micro-stutter*).
+* **Scrollbar Responsiva e Otimizada:**
+  * **Desktop ($\ge 768\text{px}$):** Barra de rolagem lateral refinada e minimalista (`8px`), com track transparente e thumb discreto em `rgba` de alto contraste universal.
+  * **Mobile ($< 768\text{px}$):** Barra lateral oculta, substituída por um componente leve de barra de progresso horizontal fixo no topo (`ScrollProgressBar`) acelerado por GPU (`scaleX`) e sem *layout thrashing*.
 
 ---
 
-## 🛠️ Stack Tecnológico
+## 🛠️ Stack Tecnológica
 
-### Frontend (Loja Virtual)
-- **Framework & Core**: [React 19](https://react.dev/) + [TypeScript 5](https://www.typescriptlang.org/)
-- **Bundler & Build Tool**: [Vite 8](https://vitejs.dev/) + [TanStack Start / Router](https://tanstack.com/router)
-- **Estilização**: [Tailwind CSS v4](https://tailwindcss.com/) + `@tailwindcss/vite`
-- **Componentes & UI**: [Radix UI](https://www.radix-ui.com/), [Lucide React](https://lucide.dev/) (iconografia) e [Sonner](https://sonner.emilkowal.ski/)
-- **Gerenciamento de Estado**: [Zustand 5](https://zustand-demo.pmnd.rs/) (com middleware `persist`)
-- **Animações & Motion**: [GSAP 3](https://gsap.com/) + [Lenis](https://lenis.darkroom.engineering/) (Smooth Scrolling)
-- **Carrosséis & Touch**: [Embla Carousel](https://www.embla-carousel.com/) + gestos por eventos nativos
-- **Testes & Qualidade**: [Vitest 4](https://vitest.dev/), Testing Library, ESLint 9 e Prettier
-
-### Backend & CMS Headless
-- **Plataforma CMS**: [Sanity.io Studio v6](https://www.sanity.io/)
-- **Linguagem de Consulta**: [GROQ](https://www.sanity.io/docs/groq) (Graph-Relational Object Queries)
-- **Cliente API**: `@sanity/client` com integração de CDN em borda
-- **Internacionalização do Painel**: `@sanity/locale-pt-br` (painel administrativo totalmente em Português)
-- **Ferramenta de Auditoria**: `@sanity/vision` integrada para testes de queries em tempo real
+| Camada | Tecnologia | Versão | Propósito |
+|---|---|---|---|
+| **Linguagem** | [TypeScript](https://www.typescriptlang.org/) | `^5.8.3` | Tipagem estática rigorosa de ponta a ponta |
+| **Frontend Framework** | [React](https://react.dev/) | `^19.2.0` | Biblioteca de interface reativa e concorrente |
+| **Roteamento SPA / SSR** | [TanStack Router](https://tanstack.com/router) | `1.170.41` | Roteamento tipado baseado em arquivos (`src/routes`) |
+| **Server Engine** | [Nitro](https://nitro.unjs.io/) / [TanStack Start](https://tanstack.com/start) | `3.0.x` | Engine universal para SSR e build Cloudflare Pages |
+| **Estilização** | [Tailwind CSS v4](https://tailwindcss.com/) | `^4.2.1` | Motor de estilos ultra-rápido com design tokens OKLCH |
+| **Gerenciamento de Estado** | [Zustand](https://zustand.docs.pmnd.rs/) | `^5.0.15` | Store leve da sacola com middleware `persist` |
+| **Smooth Scrolling** | [@studio-freight/lenis](https://lenis.darkroom.engineering/) | `^1.0.42` | Física de rolagem inercial de alta fidelidade |
+| **Animações** | [GSAP](https://gsap.com/) | `^3.15.0` | Animações de entrada em cascata e ScrollTrigger |
+| **Headless CMS** | [Sanity Studio](https://www.sanity.io/) | `^6.18.0` | Gestão de conteúdo estruturado em tempo real |
+| **Cliente do CMS** | [@sanity/client](https://www.sanity.io/docs/js-client) | `^8.9.0` | Cliente oficial com pipeline de imagens `@sanity/image-url` |
+| **Hospedagem & CDN** | [Cloudflare Pages](https://pages.cloudflare.com/) | Edge | CDN global com rota de fallback SPA (`_redirects`) |
+| **Testes Automatizados** | [Vitest](https://vitest.dev/) + [RTL](https://testing-library.com/) | `^4.1.11` / `^16.0.0` | Testes unitários e de integração de componentes |
 
 ---
 
-## 📁 Estrutura do Projeto
+## 📁 Estrutura de Diretórios (Separação de Responsabilidades - SRP)
 
-O repositório está configurado em estrutura **Monorepo**, mantendo o código do consumidor (cliente web) e o código de gestão de conteúdo organizados de forma independente:
+O projeto adota uma arquitetura modular que desacopla a definição de rotas da composição visual e das regras de negócio:
 
 ```text
 catalogo-loja-premium/
-├── public/                     # Arquivos e assets estáticos públicos
-├── src/                        # Aplicação Frontend (Loja Virtual)
-│   ├── components/             # Componentes modulares reutilizáveis
-│   │   ├── ui/                 # Primitivos de UI (Sheet, Select, Dialog, etc.)
-│   │   ├── CartDrawer.tsx      # Gaveta lateral do carrinho e checkout WhatsApp
-│   │   └── ProductSheet.tsx    # Painel detalhado do produto com galeria swipe
-│   ├── hooks/                  # React Custom Hooks
-│   ├── lib/                    # Utilitários, cliente Sanity e mock fallback
-│   │   ├── sanity.ts           # Configuração do cliente @sanity/client
-│   │   ├── utils.ts            # Helpers de data, estações e classes Tailwind
-│   │   └── productsMock.ts     # Tipagens de produto e mock de segurança
-│   ├── routes/                 # Rotas baseadas em TanStack Router
-│   │   ├── index.tsx           # Página inicial com vitrine destaque
-│   │   ├── produtos.tsx        # Catálogo geral com busca e ordenação
-│   │   └── colecao-atual.tsx   # Coleção sazonal com filtro dinâmico
-│   ├── store/                  # Estado global da aplicação
-│   │   └── useCartStore.ts     # Store Zustand com persistência em localStorage
-│   ├── styles.css              # Configurações globais e temas Tailwind v4
-│   └── server.ts               # Entrypoint SSR / Nitro
-├── studio/                     # Backend Headless (Sanity Content Studio)
-│   ├── schemaTypes/            # Definição de Schemas do Sanity
-│   │   ├── index.ts            # Registro de coleções
-│   │   └── productType.ts      # Schema completo de Produtos e atributos
-│   ├── sanity.cli.ts           # Configuração de linha de comando do Sanity
-│   ├── sanity.config.ts        # Configuração do Studio, plugins e dataset
-│   └── package.json            # Dependências isoladas do CMS
-├── package.json                # Dependências e scripts da aplicação principal
-├── vite.config.ts              # Configuração do bundler Vite e Nitro
-└── tsconfig.json               # Configurações do compilador TypeScript
+├── public/
+│   ├── _redirects             # Fallback SPA 200 para Cloudflare Pages
+│   ├── favicon.svg            # Favicon minimalista vetorial (Cabide & Monograma)
+│   └── robots.txt             # Diretivas de rastreamento de motores de busca
+├── src/
+│   ├── routes/                # Definição estrita de rotas e SEO/Head Content (< 35 linhas cada)
+│   │   ├── __root.tsx         # Casca raiz HTML, QueryClient e metadados globais
+│   │   ├── index.tsx          # Rota da Home (aponta para HomePage)
+│   │   ├── colecao-atual.tsx  # Rota da coleção sazonal
+│   │   └── produtos.tsx       # Rota do catálogo geral
+│   ├── pages/                 # Telas compostas completas da aplicação
+│   │   ├── HomePage.tsx               # Banner Hero iluminado, grade e duplo CTA
+│   │   ├── CurrentCollectionPage.tsx  # Coleção filtrada por estação do ano
+│   │   └── AllProductsPage.tsx        # Catálogo geral com busca e ordenação
+│   ├── components/            # Componentes visuais reutilizáveis
+│   │   ├── Navbar.tsx                 # Header sticky com logo, botão voltar e sacola
+│   │   ├── ProductCard.tsx            # Card de produto com badge de estoque e hover zoom
+│   │   ├── ProductGrid.tsx            # Grade responsiva com Skeleton Screens em aspect-[3/4]
+│   │   ├── Pagination.tsx             # Paginação com subida suave integrada ao Lenis
+│   │   ├── CatalogFilters.tsx         # Abas no desktop, Select no mobile e busca
+│   │   ├── CartDrawer.tsx             # Drawer lateral da sacola de compras
+│   │   ├── ProductSheet.tsx           # Modal de detalhes, galeria com swipe e compra
+│   │   ├── ScrollProgressBar.tsx      # Barra de progresso mobile acelerada por GPU
+│   │   └── ui/                        # Primitivos estritamente mantidos
+│   │       ├── select.tsx
+│   │       ├── sheet.tsx
+│   │       └── contact-footer.tsx
+│   ├── hooks/                 # Lógica de negócio encapsulada
+│   │   ├── useProducts.ts             # Fetch do Sanity, normalização e tratamento de erro
+│   │   ├── useProductDeepLink.ts      # Gerenciamento de ?produto=slug e History API
+│   │   └── useSmoothScrollAnimations.ts# Integração Lenis + GSAP ticker e pausamento
+│   ├── store/                 # Gerenciamento de estado global
+│   │   └── useCartStore.ts            # Store Zustand da sacola com bloqueio de estoque
+│   ├── lib/                   # Utilitários e integrações
+│   │   ├── sanity.ts                  # Cliente Sanity (useCdn: true) e builder de imagem
+│   │   └── utils.ts                   # formatBRL, generateSlug, getCurrentSeason, checkout WhatsApp
+│   ├── types/                 # Definições TypeScript compartilhadas
+│   │   └── product.ts                 # Interface central do modelo de Produto
+│   └── test/                  # Suíte de testes automatizados (19 testes aprovados)
+│       ├── setup.ts
+│       ├── generateSlug.test.ts
+│       ├── seasons.test.ts
+│       ├── cart.test.ts
+│       ├── ProductCard.test.tsx
+│       └── app-routing.test.tsx
+└── studio/                    # Sanity Studio v6 (Headless CMS)
+    ├── schemaTypes/
+    │   ├── index.ts
+    │   └── productType.ts     # Schema de validação do produto
+    ├── seed.ts                # Script de povoamento automatizado de 12 produtos
+    ├── sanity.config.ts       # Configuração do Studio com pt-BR locale
+    └── sanity.cli.ts          # Configurações de API e Deployment do CMS
 ```
 
 ---
@@ -98,94 +131,92 @@ catalogo-loja-premium/
 ## 🚀 Como Executar Localmente
 
 ### Pré-requisitos
-- [Node.js](https://nodejs.org/) versão `18.x` ou superior (recomendado `20.x` LTS)
-- Gerenciador de pacotes `npm` (ou `pnpm` / `yarn`)
+* **Node.js** `v20.x` ou superior instalado.
+* **NPM**, **PNPM** ou **Yarn**.
 
----
-
-### 1️⃣ Inicializar o Frontend (Loja Virtual)
-
-Clone o repositório e instale as dependências da raiz:
-
+### 1. Clonar o Repositório e Instalar Dependências
 ```bash
-# Clone este repositório
 git clone https://github.com/seu-usuario/catalogo-loja-premium.git
-
-# Acesse o diretório do projeto
 cd catalogo-loja-premium
 
-# Instale as dependências
+# Instalar dependências da aplicação principal
 npm install
 
-# Inicie o servidor de desenvolvimento
-npm run dev
-```
-
-A aplicação estará acessível em: **`http://localhost:3000`** (ou porta indicada no terminal pelo Vite).
-
----
-
-### 2️⃣ Inicializar o Backend (Sanity Studio)
-
-Em uma nova aba do terminal, acesse o diretório `/studio` para rodar o painel administrativo:
-
-```bash
-# Acesse o diretório do Studio
+# Instalar dependências do Sanity Studio
 cd studio
-
-# Instale as dependências do Studio
 npm install
+cd ..
+```
 
-# Inicie o servidor do Sanity Studio
+### 2. Executar a Aplicação Web (Frontend)
+```bash
 npm run dev
 ```
+Acesse `http://localhost:3000` no seu navegador.
 
-O painel de gerenciamento estará disponível em: **`http://localhost:3333`**.  
-Nele é possível cadastrar produtos, fazer upload de imagens de alta resolução, cadastrar variações de cores/tamanhos e definir coleções.
-
----
-
-## 🌐 Deploy em Produção
-
-A arquitetura do projeto foi desenhada para custos quase nulos de infraestrutura e carregamento ultrarrápido:
-
-### 🛍️ Frontend: Cloudflare Pages
-- O frontend está otimizado para build com **Nitro / TanStack Start**, compilando assets estáticos e edge handlers para distribuição global na rede de borda da **Cloudflare Pages**.
-- Para gerar o pacote de produção:
-  ```bash
-  npm run build
-  ```
-- O comando gerará a pasta de distribuição `.output/` pronta para deploy contínuo integrado ao GitHub.
-
-### 🗄️ CMS: Infraestrutura Global da Sanity
-- O Sanity Content Studio pode ser publicado diretamente na nuvem gerenciada da Sanity:
-  ```bash
-  cd studio
-  npm run deploy
-  ```
-- Após o deploy, o painel administrativo ficará hospedado em um domínio seguro `https://seu-projeto.sanity.studio`, com autenticação de usuários, versionamento de conteúdo e redundância global.
-
----
-
-## 🧪 Testes e Padronização de Código
-
+### 3. Executar o Sanity Studio (Painel Administrativo)
 ```bash
-# Executar a suíte de testes unitários com Vitest
-npm run test
-
-# Executar verificação de linting (ESLint)
-npm run lint
-
-# Formatar o código de acordo com as regras do Prettier
-npm run format
+cd studio
+npm run dev
 ```
+Acesse `http://localhost:3333` para gerenciar peças, fotos, categorias e disponibilidade em estoque.
+
+### 4. Povoar o Catálogo Automaticamente (Seed)
+Para preencher o banco de dados do Sanity com 12 produtos de moda premium fictícios contendo fotos reais do Unsplash enviadas diretamente aos assets do CMS:
+```bash
+cd studio
+npm run seed
+# ou via Sanity CLI:
+npx sanity exec seed.ts --with-user-token
+```
+
+### 5. Executar os Testes Automatizados
+```bash
+# Executa todos os testes unitários via Vitest
+npm test
+
+# Modo assistido (watch mode)
+npm run test:watch
+```
+
+### 6. Build de Produção
+```bash
+npm run build
+```
+
+---
+
+## 🌐 Deploy e CI/CD
+
+O projeto opera sob uma arquitetura Jamstack 100% desacoplada:
+
+```
+┌─────────────────────────────────────────┐      ┌─────────────────────────────────────────┐
+│           CLOUDFLARE PAGES              │      │               SANITY.IO                 │
+│                                         │      │                                         │
+│   Frontend SPA/SSR de alta velocidade   │      │        Headless CMS em Nuvem            │
+│   • Build automático a cada push        │      │   • API com CDN global em borda         │
+│   • Roteamento SPA via _redirects       │      │   • Deploy independente do Studio       │
+│   • Edge caching & compressão Brotli    │      │   • Asset Pipeline (WebP/AVIF)          │
+└─────────────────────────────────────────┘      └─────────────────────────────────────────┘
+```
+
+1. **Frontend (Cloudflare Pages):**
+   * Conectado ao repositório GitHub com deploy automático a cada push ou pull request na branch `main`.
+   * **Build command:** `npm run build`
+   * **Output directory:** `.output/public`
+   * O arquivo `public/_redirects` (`/* /index.html 200`) garante que rotas diretas (ex: `/colecao-atual` ou `/produtos?produto=...`) recarreguem com sucesso sem erros `404`.
+
+2. **Backend & Studio (Sanity Cloud):**
+   * O painel administrativo é hospedado diretamente nos servidores do Sanity.
+   * Para publicar novas alterações de schema ou configurações do Studio:
+     ```bash
+     cd studio
+     npx sanity deploy
+     ```
 
 ---
 
 ## 📄 Licença
 
-Este projeto foi desenvolvido para fins de exibição comercial e portfólio. Todos os direitos reservados.
-
-<p align="center">
-  Feito com excelência técnica para o segmento de <strong>Moda Premium</strong>.
-</p>
+Este projeto foi desenvolvido para fins de demonstração técnica, portfólio de engenharia de software e e-commerce de alto impacto. Código sob licença MIT.
