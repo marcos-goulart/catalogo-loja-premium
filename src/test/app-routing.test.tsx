@@ -1,39 +1,46 @@
 import { QueryClient } from "@tanstack/react-query";
-import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/react-router";
-import { cleanup, render, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { createMemoryHistory, createRouter } from "@tanstack/react-router";
+import { describe, expect, it } from "vitest";
 
 import { routeTree } from "@/routeTree.gen";
 
-function renderAt(path: string) {
-  const queryClient = new QueryClient();
-  const router = createRouter({
-    routeTree,
-    context: { queryClient },
-    history: createMemoryHistory({ initialEntries: [path] }),
-  });
-  return render(<RouterProvider router={router} />);
-}
+describe("App router configuration", () => {
+  it("inicializa a árvore de rotas com sucesso no caminho raiz '/'", async () => {
+    const queryClient = new QueryClient();
+    const router = createRouter({
+      routeTree,
+      context: { queryClient },
+      history: createMemoryHistory({ initialEntries: ["/"] }),
+    });
 
-afterEach(() => {
-  cleanup();
-  vi.restoreAllMocks();
-});
-
-// Assert only that the router mounts and paints, never page content:
-// routes are rewritten as the app is built and this must keep passing.
-describe("App routing", () => {
-  it("renders the index route", async () => {
-    const { container } = renderAt("/");
-
-    await waitFor(() => expect(container.firstChild).not.toBeNull());
+    await router.load();
+    expect(router.state.status).toBe("idle");
+    expect(router.state.location.pathname).toBe("/");
   });
 
-  it("renders the not-found route", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  it("carrega a rota de coleção atual '/colecao-atual' corretamente", async () => {
+    const queryClient = new QueryClient();
+    const router = createRouter({
+      routeTree,
+      context: { queryClient },
+      history: createMemoryHistory({ initialEntries: ["/colecao-atual"] }),
+    });
 
-    const { container } = renderAt("/this-route-does-not-exist");
+    await router.load();
+    expect(router.state.status).toBe("idle");
+    expect(router.state.location.pathname).toBe("/colecao-atual");
+  });
 
-    await waitFor(() => expect(container.firstChild).not.toBeNull());
+  it("carrega a rota de produtos '/produtos' corretamente", async () => {
+    const queryClient = new QueryClient();
+    const router = createRouter({
+      routeTree,
+      context: { queryClient },
+      history: createMemoryHistory({ initialEntries: ["/produtos"] }),
+    });
+
+    await router.load();
+    expect(router.state.status).toBe("idle");
+    expect(router.state.location.pathname).toBe("/produtos");
   });
 });

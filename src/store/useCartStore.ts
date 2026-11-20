@@ -9,11 +9,12 @@ export interface CartItem {
   color: string;
   image: string;
   quantity: number;
+  inStock?: boolean;
 }
 
 interface CartStore {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
+  addItem: (item: Omit<CartItem, "quantity"> & { quantity?: number; inStock?: boolean }) => void;
   removeItem: (id: string, size: string, color: string) => void;
   updateQuantity: (id: string, size: string, color: string, quantity: number) => void;
   clearCart: () => void;
@@ -27,10 +28,17 @@ export const useCartStore = create<CartStore>()(
       items: [],
 
       addItem: (item) => {
+        // Bloqueio rigoroso de estoque: nunca permite adicionar item indisponível
+        if (item.inStock === false) {
+          console.warn(`Tentativa de adicionar produto esgotado à sacola: ${item.name}`);
+          return;
+        }
+
         const quantityToAdd = item.quantity ?? 1;
+
         set((state) => {
           const existingIndex = state.items.findIndex(
-            (i) => i.id === item.id && i.size === item.size && i.color === item.color
+            (i) => i.id === item.id && i.size === item.size && i.color === item.color,
           );
 
           if (existingIndex > -1) {
@@ -53,6 +61,7 @@ export const useCartStore = create<CartStore>()(
             color: item.color,
             image: item.image,
             quantity: quantityToAdd,
+            inStock: true,
           };
 
           return {
@@ -63,9 +72,7 @@ export const useCartStore = create<CartStore>()(
 
       removeItem: (id, size, color) => {
         set((state) => ({
-          items: state.items.filter(
-            (i) => !(i.id === id && i.size === size && i.color === color)
-          ),
+          items: state.items.filter((i) => !(i.id === id && i.size === size && i.color === color)),
         }));
       },
 
@@ -77,9 +84,7 @@ export const useCartStore = create<CartStore>()(
 
         set((state) => ({
           items: state.items.map((i) =>
-            i.id === id && i.size === size && i.color === color
-              ? { ...i, quantity }
-              : i
+            i.id === id && i.size === size && i.color === color ? { ...i, quantity } : i,
           ),
         }));
       },
@@ -98,6 +103,6 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: "catalogo-cart-storage",
-    }
-  )
+    },
+  ),
 );

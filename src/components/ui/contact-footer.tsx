@@ -1,4 +1,4 @@
-import { CONTACT } from "@/lib/productsMock";
+import { CONTACT } from "@/lib/utils";
 import { AtSign, Mail, MapPin, MessageCircle } from "lucide-react";
 
 export function ContactFooter() {
