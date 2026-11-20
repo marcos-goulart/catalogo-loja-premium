@@ -58,7 +58,7 @@ export function ScrollProgressBar() {
   return (
     <div
       aria-hidden="true"
-      className="fixed left-0 right-0 top-0 z-50 h-[2px] pointer-events-none md:hidden bg-transparent"
+      className="fixed left-0 right-0 top-0 z-30 h-[2px] pointer-events-none md:hidden bg-transparent"
     >
       <div
         ref={barRef}
