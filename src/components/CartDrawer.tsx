@@ -32,7 +32,11 @@ export function CartDrawer() {
         </button>
       </SheetTrigger>
 
-      <SheetContent side="right" className="flex w-full flex-col bg-background p-0 sm:max-w-md">
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col bg-background p-0 sm:max-w-md overscroll-contain"
+        data-lenis-prevent
+      >
         <SheetHeader className="border-b border-border/60 px-6 py-5 text-left">
           <SheetTitle className="text-base font-light tracking-[0.2em] uppercase">
             Sua Sacola
@@ -42,7 +46,7 @@ export function CartDrawer() {
           </p>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4" data-lenis-prevent>
           {items.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <ShoppingBag className="h-12 w-12 text-muted-foreground/40 stroke-1" />

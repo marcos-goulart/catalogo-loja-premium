@@ -105,6 +105,7 @@
 /* Evita qualquer conflito nativo de smooth scroll com a biblioteca Lenis */
 html {
   scroll-behavior: auto !important;
+  overflow-y: scroll;
 }
 
 html.lenis,
@@ -113,6 +114,28 @@ html.lenis body {
 }
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
+}
+
+/* 
+ * Previne que o scroll-lock do Radix (body[data-scroll-locked]) colapse
+ * a posição visual da página (scrollY = 0) ao abrir modais/drawers (CartDrawer, etc.).
+ * O Lenis gerencia o travamento do scroll de fundo via JS (lenis.stop()).
+ */
+html body[data-scroll-locked] {
+  overflow: visible !important;
+  position: static !important;
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Oculta visualmente a barra de rolagem da página principal enquanto modais/drawers estiverem abertos */
+html:has(body[data-scroll-locked]) {
+  scrollbar-width: none;
+}
+html:has(body[data-scroll-locked])::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* 

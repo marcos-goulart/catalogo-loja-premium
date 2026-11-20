@@ -32,6 +32,10 @@ export function ProductSheet({
     setIsAdded(false);
     if (!product) return;
 
+    // Sincroniza lock attribute no body para ocultar a scrollbar principal
+    const current = parseInt(document.body.getAttribute("data-scroll-locked") || "0", 10);
+    document.body.setAttribute("data-scroll-locked", (current + 1).toString());
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowLeft" && product.gallery.length > 1) {
@@ -42,7 +46,15 @@ export function ProductSheet({
       }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      const remaining = parseInt(document.body.getAttribute("data-scroll-locked") || "1", 10) - 1;
+      if (remaining <= 0) {
+        document.body.removeAttribute("data-scroll-locked");
+      } else {
+        document.body.setAttribute("data-scroll-locked", remaining.toString());
+      }
+    };
   }, [product, onClose]);
 
   if (!product) return null;
@@ -134,12 +146,16 @@ export function ProductSheet({
   const displaySizes = availableSizes.length > 0 ? availableSizes : product.sizes;
 
   return (
-    <div className="fixed inset-0 z-50" data-lenis-prevent>
+    <div className="fixed inset-0 z-50">
       <div
         className="absolute inset-0 bg-foreground/50 backdrop-blur-sm animate-in fade-in"
         onClick={onClose}
+        onTouchMove={(e) => e.preventDefault()}
       />
-      <aside className="absolute inset-x-0 bottom-0 max-h-[92vh] overflow-y-auto bg-background animate-in slide-in-from-bottom duration-300 md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[520px] md:slide-in-from-right">
+      <aside
+        data-lenis-prevent
+        className="absolute inset-x-0 bottom-0 max-h-[92vh] overflow-y-auto overscroll-contain bg-background animate-in slide-in-from-bottom duration-300 md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[520px] md:slide-in-from-right"
+      >
         <button
           onClick={onClose}
           aria-label="Fechar"

@@ -43,6 +43,10 @@ export function useSmoothScrollAnimations(options: UseSmoothScrollAnimationsOpti
 
     lenis.on("scroll", ScrollTrigger.update);
 
+    if (isModalOpen) {
+      lenis.stop();
+    }
+
     return () => {
       gsap.ticker.remove(onGsapTick);
       lenis.destroy();
@@ -53,12 +57,13 @@ export function useSmoothScrollAnimations(options: UseSmoothScrollAnimationsOpti
 
   // Pausa / Retoma o scroll do Lenis quando o modal de detalhes do produto estiver aberto
   useEffect(() => {
-    if (!lenisRef.current) return;
+    const lenis = lenisRef.current || (typeof window !== "undefined" ? window.__lenis : null);
+    if (!lenis) return;
 
     if (isModalOpen) {
-      lenisRef.current.stop();
+      lenis.stop();
     } else {
-      lenisRef.current.start();
+      lenis.start();
     }
   }, [isModalOpen]);
 
