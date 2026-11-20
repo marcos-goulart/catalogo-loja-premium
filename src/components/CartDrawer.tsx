@@ -1,6 +1,6 @@
 import { ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
-import { formatBRL, WHATSAPP_NUMBER } from "@/lib/productsMock";
+import { formatBRL, getWhatsAppCheckoutUrl } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export function CartDrawer() {
@@ -11,19 +11,7 @@ export function CartDrawer() {
 
   const handleCheckout = () => {
     if (items.length === 0) return;
-
-    let message = "Olá! Gostaria de finalizar a seguinte encomenda:\n\n";
-
-    items.forEach((item) => {
-      const itemPriceFormatted = formatBRL(item.price * item.quantity);
-      message += `- ${item.quantity}x ${item.name} (Tam: ${item.size} | Cor: ${item.color}) - ${itemPriceFormatted}\n`;
-    });
-
-    const subtotalFormatted = formatBRL(subtotal);
-    message += `\n*Subtotal: ${subtotalFormatted}*`;
-    message += "\n\nAguardo as informações para pagamento e envio!";
-
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = getWhatsAppCheckoutUrl(items, subtotal);
     window.open(whatsappUrl, "_blank");
   };
 
@@ -33,7 +21,7 @@ export function CartDrawer() {
         <button
           type="button"
           aria-label="Abrir sacola de compras"
-          className="relative inline-flex items-center justify-center p-2 text-foreground transition-opacity hover:opacity-75 focus-visible:outline-none"
+          className="relative inline-flex items-center justify-center p-2 text-foreground transition-opacity hover:opacity-75 focus-visible:outline-none cursor-pointer"
         >
           <ShoppingBag className="h-5 w-5" />
           {totalItems > 0 && (
@@ -80,7 +68,7 @@ export function CartDrawer() {
                         <button
                           type="button"
                           onClick={() => removeItem(item.id, item.size, item.color)}
-                          className="text-muted-foreground transition-colors hover:text-destructive"
+                          className="text-muted-foreground transition-colors hover:text-destructive cursor-pointer"
                           aria-label="Remover item"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -99,7 +87,7 @@ export function CartDrawer() {
                             updateQuantity(item.id, item.size, item.color, item.quantity - 1)
                           }
                           aria-label="Diminuir quantidade"
-                          className="grid h-7 w-7 place-items-center text-muted-foreground transition hover:text-foreground"
+                          className="grid h-7 w-7 place-items-center text-muted-foreground transition hover:text-foreground cursor-pointer"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
@@ -110,7 +98,7 @@ export function CartDrawer() {
                             updateQuantity(item.id, item.size, item.color, item.quantity + 1)
                           }
                           aria-label="Aumentar quantidade"
-                          className="grid h-7 w-7 place-items-center text-muted-foreground transition hover:text-foreground"
+                          className="grid h-7 w-7 place-items-center text-muted-foreground transition hover:text-foreground cursor-pointer"
                         >
                           <Plus className="h-3 w-3" />
                         </button>

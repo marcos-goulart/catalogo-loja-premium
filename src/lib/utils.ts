@@ -32,14 +32,76 @@ export function getSeasonSanityValue(date: Date = new Date()): string {
 }
 
 /**
- * Utilitário de formatação de slugs para Deep Linking.
+ * Utilitário de formatação de slugs para Deep Linking e URLs amigáveis.
  */
 export function generateSlug(text: string): string {
+  if (!text) return "";
   return text
-    .toLowerCase()
+    .toString()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\w\s-]/g, "")
+    .toLowerCase()
     .trim()
-    .replace(/\s+/g, "-");
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]+/g, "")
+    .replace(/--+/g, "-");
+}
+
+/**
+ * Formatação de valores monetários em Real brasileiro (BRL).
+ */
+export function formatBRL(n: number): string {
+  return n.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+export const WHATSAPP_NUMBER = "5521999999999";
+
+export const CONTACT = {
+  whatsapp: WHATSAPP_NUMBER,
+  email: "contato@modapremium.com.br",
+  instagram: "@modapremium",
+  city: "Magé — RJ",
+};
+
+export interface OrderItem {
+  name: string;
+  size: string;
+  color: string;
+  quantity: number;
+  price: number;
+}
+
+/**
+ * Formata mensagem de pedido pronta para envio via WhatsApp.
+ */
+export function formatWhatsAppOrder(items: OrderItem[], subtotal: number): string {
+  if (items.length === 0) return "";
+
+  let message = "Olá! Gostaria de finalizar a seguinte encomenda:\n\n";
+
+  items.forEach((item) => {
+    const itemTotal = formatBRL(item.price * item.quantity);
+    message += `- ${item.quantity}x ${item.name} (Tam: ${item.size} | Cor: ${item.color}) - ${itemTotal}\n`;
+  });
+
+  const subtotalFormatted = formatBRL(subtotal);
+  message += `\n*Subtotal: ${subtotalFormatted}*`;
+  message += "\n\nAguardo as informações para pagamento e envio!";
+
+  return message;
+}
+
+/**
+ * Gera URL direta da API do WhatsApp com o texto codificado.
+ */
+export function getWhatsAppCheckoutUrl(
+  items: OrderItem[],
+  subtotal: number,
+  phoneNumber: string = WHATSAPP_NUMBER,
+): string {
+  const message = formatWhatsAppOrder(items, subtotal);
+  return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 }

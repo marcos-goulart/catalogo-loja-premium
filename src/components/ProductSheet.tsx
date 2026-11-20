@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { X, MessageCircle, ShoppingBag, Check, ChevronLeft, ChevronRight } from "lucide-react";
-import { type Product, formatBRL, WHATSAPP_NUMBER } from "@/lib/productsMock";
+import type { Product } from "@/types/product";
+import { formatBRL, WHATSAPP_NUMBER } from "@/lib/utils";
+import { urlForImage } from "@/lib/sanity";
 import { useCartStore } from "@/store/useCartStore";
 
 const STANDARD_SIZES = ["PP", "P", "M", "G", "GG", "XG", "Único"];
@@ -26,9 +28,10 @@ export function ProductSheet({
   useEffect(() => {
     setImg(0);
     setSize(null);
-    setColor(product?.colors[0] ?? null);
+    setColor(product?.colors?.[0] ?? null);
     setIsAdded(false);
     if (!product) return;
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowLeft" && product.gallery.length > 1) {
@@ -113,20 +116,20 @@ export function ProductSheet({
       price: product.price,
       size,
       color: color || product.colors[0] || "",
-      image: product.gallery[img] || product.gallery[0] || "",
+      image: urlForImage(product.gallery[img] || product.gallery[0], 600) || "",
       quantity: 1,
+      inStock: product.inStock,
     });
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 1800);
   };
 
   const buy = () => {
-    if (!size) return;
-    const text = `Olá! Tenho interesse no produto: ${product.name} - Tamanho: ${size} - R$ ${product.price.toFixed(2).replace(".", ",")}`;
+    if (!size || !product.inStock) return;
+    const text = `Olá! Tenho interesse no produto: ${product.name} - Tamanho: ${size} - ${formatBRL(product.price)}`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
-  // Montar lista de tamanhos disponíveis a exibir
   const availableSizes = STANDARD_SIZES.filter((s) => product.sizes.includes(s));
   const displaySizes = availableSizes.length > 0 ? availableSizes : product.sizes;
 
@@ -140,7 +143,7 @@ export function ProductSheet({
         <button
           onClick={onClose}
           aria-label="Fechar"
-          className="absolute right-4 top-4 z-20 grid h-10 w-10 place-items-center rounded-full bg-background/90 text-foreground transition hover:bg-background"
+          className="absolute right-4 top-4 z-20 grid h-10 w-10 place-items-center rounded-full bg-background/90 text-foreground transition hover:bg-background cursor-pointer"
         >
           <X className="h-5 w-5" />
         </button>
@@ -157,9 +160,10 @@ export function ProductSheet({
         >
           {totalImages > 0 && (
             <img
-              src={product.gallery[img] || product.gallery[0]}
+              src={urlForImage(product.gallery[img] || product.gallery[0], 1200)}
               alt={product.name}
               draggable={false}
+              decoding="async"
               className="h-full w-full object-cover transition-opacity duration-300 pointer-events-none"
             />
           )}
@@ -174,7 +178,7 @@ export function ProductSheet({
                   prevImg();
                 }}
                 aria-label="Imagem anterior"
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 grid h-10 w-10 place-items-center rounded-full bg-background/80 backdrop-blur-sm text-foreground shadow-md transition hover:bg-background active:scale-95"
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 grid h-10 w-10 place-items-center rounded-full bg-background/80 backdrop-blur-sm text-foreground shadow-md transition hover:bg-background active:scale-95 cursor-pointer"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
@@ -186,7 +190,7 @@ export function ProductSheet({
                   nextImg();
                 }}
                 aria-label="Próxima imagem"
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 grid h-10 w-10 place-items-center rounded-full bg-background/80 backdrop-blur-sm text-foreground shadow-md transition hover:bg-background active:scale-95"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 grid h-10 w-10 place-items-center rounded-full bg-background/80 backdrop-blur-sm text-foreground shadow-md transition hover:bg-background active:scale-95 cursor-pointer"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
@@ -212,13 +216,19 @@ export function ProductSheet({
               <button
                 key={g + i}
                 onClick={() => setImg(i)}
-                className={`h-20 w-16 shrink-0 overflow-hidden border-2 transition ${
+                className={`h-20 w-16 shrink-0 overflow-hidden border-2 transition cursor-pointer ${
                   i === img
                     ? "border-foreground"
                     : "border-transparent opacity-60 hover:opacity-100"
                 }`}
               >
-                <img src={g} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={urlForImage(g, 200)}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover"
+                />
               </button>
             ))}
           </div>
@@ -226,8 +236,15 @@ export function ProductSheet({
 
         <div className="space-y-6 p-6 pb-10">
           <div>
-            <h2 className="text-2xl font-light tracking-tight">{product.name}</h2>
-            <p className="mt-1 text-lg">{formatBRL(product.price)}</p>
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-2xl font-light tracking-tight">{product.name}</h2>
+              {!product.inStock && (
+                <span className="shrink-0 bg-muted px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground border border-border">
+                  Esgotado
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-lg font-light">{formatBRL(product.price)}</p>
           </div>
 
           {product.colors && product.colors.length > 0 && (
@@ -240,9 +257,9 @@ export function ProductSheet({
                   <button
                     key={c}
                     onClick={() => setColor(c)}
-                    className={`border px-4 py-2 text-sm transition ${
+                    className={`border px-4 py-2 text-sm transition cursor-pointer ${
                       c === color
-                        ? "border-foreground font-medium"
+                        ? "border-foreground font-medium bg-foreground/5"
                         : "border-border text-muted-foreground hover:border-foreground"
                     }`}
                   >
@@ -257,15 +274,15 @@ export function ProductSheet({
             <p className="mb-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">Tamanho</p>
             <div className="flex flex-wrap gap-2">
               {displaySizes.map((s) => {
-                const isAvailable = product.sizes.includes(s);
+                const isAvailable = product.sizes.includes(s) && product.inStock;
                 return (
                   <button
                     key={s}
                     disabled={!isAvailable}
                     onClick={() => setSize(s)}
-                    className={`h-11 min-w-[3rem] px-3 border text-sm transition disabled:opacity-30 disabled:line-through ${
+                    className={`h-11 min-w-[3rem] px-3 border text-sm transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 disabled:line-through ${
                       s === size
-                        ? "border-foreground bg-foreground text-background"
+                        ? "border-foreground bg-foreground text-background font-medium"
                         : "border-border hover:border-foreground"
                     }`}
                   >
@@ -280,7 +297,7 @@ export function ProductSheet({
             <button
               onClick={handleAddToCart}
               disabled={!size || !product.inStock}
-              className="flex h-14 w-full items-center justify-center gap-2 border border-foreground bg-foreground text-background text-sm font-medium uppercase tracking-[0.2em] transition hover:bg-foreground/90 disabled:opacity-50"
+              className="flex h-14 w-full items-center justify-center gap-2 border border-foreground bg-foreground text-background text-sm font-medium uppercase tracking-[0.2em] transition hover:bg-foreground/90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               {isAdded ? (
                 <>
@@ -291,7 +308,7 @@ export function ProductSheet({
                 <>
                   <ShoppingBag className="h-4 w-4" />
                   {!product.inStock
-                    ? "Esgotado"
+                    ? "Peça Esgotada"
                     : size
                       ? "Adicionar à Sacola"
                       : "Selecione um tamanho"}
@@ -302,7 +319,7 @@ export function ProductSheet({
             <button
               onClick={buy}
               disabled={!size || !product.inStock}
-              className="flex h-12 w-full items-center justify-center gap-2 border border-border text-xs uppercase tracking-[0.2em] text-muted-foreground transition hover:border-foreground hover:text-foreground disabled:opacity-50"
+              className="flex h-12 w-full items-center justify-center gap-2 border border-border text-xs uppercase tracking-[0.2em] text-muted-foreground transition hover:border-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <MessageCircle className="h-4 w-4" />
               Comprar direto no WhatsApp
